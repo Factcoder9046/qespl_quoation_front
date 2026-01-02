@@ -40,80 +40,136 @@ export default function ViewQuotationPage() {
     }
   };
 
-  const downloadPDF = async () => {
-    setDownloading(true);
-    try {
-      const { default: jsPDF } = await import('jspdf');
-      await import('jspdf-autotable');
-      const doc = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = doc.internal.pageSize.width;
-      const pageHeight = doc.internal.pageSize.height;
+ const downloadPDF = async () => {
+  setDownloading(true);
+  try {
+    const { default: jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
 
-      doc.addImage('/letterhead.png.jpeg', 'JPEG', 0, 0, pageWidth, pageHeight);
+    // Detect if user is on mobile (screen width less than 768px)
+    const isMobile = window.innerWidth < 768;
 
-      let yPos = 95;
-      const leftMargin = 20;
-      const rightMargin = 20;
+    // Adjust page size and margins for mobile
+    const doc = new jsPDF('p', 'mm', 'a4'); // still A4, but we'll adjust fonts/margins
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
 
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      doc.text('QUOTATION', pageWidth / 2, yPos, { align: 'center' });
+    const leftMargin = isMobile ? 10 : 20;
+    const rightMargin = isMobile ? 10 : 20;
 
-      yPos += 12;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      doc.text(`Quotation No: ${quotation.quotationNumber}`, pageWidth - rightMargin, yPos, { align: 'right' });
-      yPos += 6;
-      doc.text(`Date: ${new Date(quotation.createdAt).toLocaleDateString()}`, pageWidth - rightMargin, yPos, { align: 'right' });
+    const fontSizeTitle = isMobile ? 14 : 18;
+    const fontSizeNormal = isMobile ? 8 : 10;
+    const fontSizeTotals = isMobile ? 10 : 12;
 
-      yPos += 14;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Bill To:', leftMargin, yPos);
-      yPos += 6;
-      doc.setFont('helvetica', 'normal');
-      doc.text(quotation.customerName, leftMargin, yPos);
-      if (quotation.customerEmail) { yPos += 5; doc.text(quotation.customerEmail, leftMargin, yPos); }
-      if (quotation.customerPhone) { yPos += 5; doc.text(quotation.customerPhone, leftMargin, yPos); }
-      if (quotation.customerAddress) { yPos += 5; doc.text(doc.splitTextToSize(quotation.customerAddress, 80), leftMargin, yPos); }
+    // Add letterhead
+    doc.addImage('/letterhead.png.jpeg', 'JPEG', 0, 0, pageWidth, pageHeight);
 
-      yPos += 18;
-      doc.autoTable({
-        startY: yPos,
-        margin: { left: leftMargin, right: rightMargin },
-        head: [['Description','Qty','Rate (₹)','Tax (%)','Amount (₹)']],
-        body: quotation.items.map(i => [i.description,i.quantity.toString(),i.rate.toFixed(2),i.tax.toFixed(2),i.amount.toFixed(2)]),
-        styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
-        headStyles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold', halign: 'center' },
-        columnStyles: {0:{cellWidth:70,halign:'left'},1:{cellWidth:15,halign:'center'},2:{cellWidth:25,halign:'right'},3:{cellWidth:20,halign:'center'},4:{cellWidth:30,halign:'right'}},
-        theme: 'grid'
+    let yPos = isMobile ? 70 : 95;
+
+    // Title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(fontSizeTitle);
+    doc.text('QUOTATION', pageWidth / 2, yPos, { align: 'center' });
+
+    // Quotation number and date
+    yPos += isMobile ? 10 : 12;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(fontSizeNormal);
+    doc.text(`Quotation No: ${quotation.quotationNumber}`, pageWidth - rightMargin, yPos, { align: 'right' });
+    yPos += isMobile ? 5 : 6;
+    doc.text(`Date: ${new Date(quotation.createdAt).toLocaleDateString()}`, pageWidth - rightMargin, yPos, { align: 'right' });
+
+    // Customer details
+    yPos += isMobile ? 10 : 14;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill To:', leftMargin, yPos);
+    yPos += isMobile ? 4 : 6;
+    doc.setFont('helvetica', 'normal');
+
+    const customerDetails = [
+      quotation.customerName,
+      quotation.customerEmail,
+      quotation.customerPhone,
+      quotation.customerAddress
+    ].filter(Boolean);
+
+    customerDetails.forEach(detail => {
+      const lines = doc.splitTextToSize(detail, pageWidth - leftMargin - rightMargin);
+      lines.forEach(line => {
+        doc.text(line, leftMargin, yPos);
+        yPos += isMobile ? 4 : 5;
       });
+    });
 
-      yPos = doc.lastAutoTable.finalY + 12;
-      const totalsX = pageWidth - rightMargin - 60;
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-      doc.text('Subtotal:', totalsX, yPos);
-      doc.text(`₹ ${quotation.subtotal.toFixed(2)}`, pageWidth - rightMargin, yPos, { align: 'right' });
-      yPos += 6;
-      doc.text('Tax:', totalsX, yPos);
-      doc.text(`₹ ${quotation.tax.toFixed(2)}`, pageWidth - rightMargin, yPos, { align: 'right' });
-      yPos += 8; doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-      doc.text('Total:', totalsX, yPos);
-      doc.text(`₹ ${quotation.total.toFixed(2)}`, pageWidth - rightMargin, yPos, { align: 'right' });
+    yPos += isMobile ? 8 : 10;
 
-      if (quotation.notes) {
-        yPos += 15;
-        doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.text('Notes:', leftMargin, yPos);
-        yPos += 5;
-        doc.setFont('helvetica','normal');
-        doc.text(doc.splitTextToSize(quotation.notes, pageWidth - leftMargin - rightMargin), leftMargin, yPos);
-      }
+    // Items table
+    doc.autoTable({
+      startY: yPos,
+      margin: { left: leftMargin, right: rightMargin },
+      head: [['Description','Qty','Rate (₹)','Tax (%)','Amount (₹)']],
+      body: quotation.items.map(i => [
+        i.description,
+        i.quantity.toString(),
+        i.rate.toFixed(2),
+        i.tax.toFixed(2),
+        i.amount.toFixed(2)
+      ]),
+      styles: { fontSize: isMobile ? 7 : 9, cellPadding: isMobile ? 2 : 4, overflow: 'linebreak' },
+      headStyles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold', halign: 'center' },
+      columnStyles: {
+        0: { cellWidth: isMobile ? 50 : 70, halign: 'left' },
+        1: { cellWidth: isMobile ? 12 : 15, halign: 'center' },
+        2: { cellWidth: isMobile ? 20 : 25, halign: 'right' },
+        3: { cellWidth: isMobile ? 15 : 20, halign: 'center' },
+        4: { cellWidth: isMobile ? 20 : 30, halign: 'right' }
+      },
+      theme: 'grid'
+    });
 
-      doc.save(`Quotation-${quotation.quotationNumber}.pdf`);
-      toast.success('PDF downloaded successfully');
-    } catch (error) {
-      console.error(error); toast.error('PDF generation failed');
-    } finally { setDownloading(false); }
-  };
+    yPos = doc.lastAutoTable.finalY + (isMobile ? 8 : 12);
+
+    // Totals
+    const totalsX = pageWidth - rightMargin - (isMobile ? 50 : 60);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(fontSizeNormal);
+    doc.text('Subtotal:', totalsX, yPos);
+    doc.text(`₹ ${quotation.subtotal.toFixed(2)}`, pageWidth - rightMargin, yPos, { align: 'right' });
+    yPos += isMobile ? 5 : 6;
+    doc.text('Tax:', totalsX, yPos);
+    doc.text(`₹ ${quotation.tax.toFixed(2)}`, pageWidth - rightMargin, yPos, { align: 'right' });
+    yPos += isMobile ? 6 : 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(fontSizeTotals);
+    doc.text('Total:', totalsX, yPos);
+    doc.text(`₹ ${quotation.total.toFixed(2)}`, pageWidth - rightMargin, yPos, { align: 'right' });
+
+    // Notes
+    if (quotation.notes) {
+      yPos += isMobile ? 10 : 15;
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(fontSizeNormal);
+      doc.text('Notes:', leftMargin, yPos);
+      yPos += isMobile ? 4 : 5;
+      doc.setFont('helvetica','normal');
+      const noteLines = doc.splitTextToSize(quotation.notes, pageWidth - leftMargin - rightMargin);
+      noteLines.forEach(line => {
+        doc.text(line, leftMargin, yPos);
+        yPos += isMobile ? 4 : 5;
+      });
+    }
+
+    doc.save(`Quotation-${quotation.quotationNumber}.pdf`);
+    toast.success('PDF downloaded successfully');
+
+  } catch (error) {
+    console.error(error);
+    toast.error('PDF generation failed');
+  } finally {
+    setDownloading(false);
+  }
+};
+
 
   const printQuotation = () => window.print();
 

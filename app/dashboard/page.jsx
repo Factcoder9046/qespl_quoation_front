@@ -243,100 +243,102 @@ export default function DashboardPage() {
 
 
             {/* Recent Quotations */}
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-200 flex items-center justify-between">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900">Recent Quotations</h2>
-                        <p className="text-sm text-gray-600 mt-1">Your latest quotation activity</p>
-                    </div>
-                    <Link
-                        href="/dashboard/quotations"
-                        className="text-gray-900 hover:text-gray-700 font-medium flex items-center gap-2 text-sm transition-colors"
-                    >
-                        View All
-                        <ArrowRight className="w-4 h-4" />
-                    </Link>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+                <div>
+                    <h2 className="text-xl font-bold text-gray-900">Recent Quotations</h2>
+                    <p className="text-sm text-gray-600 mt-1">Your latest quotation activity</p>
                 </div>
-
-                {recentQuotations.length === 0 ? (
-                    <div className="p-12 text-center">
-                        <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <FileText className="w-8 h-8 text-gray-400" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">No quotations yet</h3>
-                        <p className="text-gray-600 mb-6">Get started by creating your first quotation</p>
-                        <Link
-                            href="/dashboard/quotations/create"
-                            className="inline-flex items-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Create Quotation
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Quotation #
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Customer
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Amount
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Date
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {filteredRecentQuotations.map((quotation) => (
-                                    <tr key={quotation._id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <Link
-                                                href={`/dashboard/quotations/${quotation._id}`}
-                                                className="text-gray-900 hover:text-gray-700 font-semibold text-sm"
-                                            >
-                                                {quotation.quotationNumber}
-                                            </Link>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">{quotation.customerName}</div>
-                                            <div className="text-sm text-gray-500">{quotation.customerEmail}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className="text-sm font-bold text-gray-900">
-                                                ₹{quotation.total.toLocaleString()}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`px-3 py-1.5 inline-flex text-xs font-semibold rounded-lg
-                                                    ${quotation.status === 'draft' ? 'bg-yellow-100 text-yellow-700' : ''}
-                                                    ${quotation.status === 'sent' ? 'bg-blue-100 text-blue-700' : ''}
-                                                    ${quotation.status === 'accepted' ? 'bg-green-100 text-green-700' : ''}
-                                                    ${quotation.status === 'rejected' ? 'bg-red-100 text-red-700' : ''}
-                                                `}
-                                            >
-                                                {quotation.status.charAt(0).toUpperCase() + quotation.status.slice(1)}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {new Date(quotation.createdAt).toLocaleDateString()}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
+                <table className="w-full">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Quotation #
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Customer
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Amount
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                Date
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {filteredRecentQuotations.map((quotation) => (
+                            <tr key={quotation._id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <Link
+                                        href={`/dashboard/quotations/${quotation._id}`}
+                                        className="text-gray-900 hover:text-gray-700 font-semibold text-sm"
+                                    >
+                                        {quotation.quotationNumber}
+                                    </Link>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-medium text-gray-900">{quotation.customerName}</div>
+                                    <div className="text-sm text-gray-500">{quotation.customerEmail}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className="text-sm font-bold text-gray-900">
+                                        ₹{quotation.total.toLocaleString()}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span
+                                        className={`px-3 py-1.5 inline-flex text-xs font-semibold rounded-lg
+                  ${quotation.status === 'draft' ? 'bg-yellow-100 text-yellow-700' : ''}
+                  ${quotation.status === 'sent' ? 'bg-blue-100 text-blue-700' : ''}
+                  ${quotation.status === 'accepted' ? 'bg-green-100 text-green-700' : ''}
+                  ${quotation.status === 'rejected' ? 'bg-red-100 text-red-700' : ''}
+              `}
+                                    >
+                                        {quotation.status.charAt(0).toUpperCase() + quotation.status.slice(1)}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {new Date(quotation.createdAt).toLocaleDateString()}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-4">
+                {filteredRecentQuotations.map((quotation) => (
+                    <Link
+                        key={quotation._id}
+                        href={`/dashboard/quotations/${quotation._id}`}
+                        className="block border border-gray-200 rounded-2xl p-4 bg-white hover:shadow-sm transition-shadow"
+                    >
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-gray-900 font-semibold">{quotation.quotationNumber}</span>
+                            <span
+                                className={`px-2 py-1 text-xs font-semibold rounded-lg
+            ${quotation.status === 'draft' ? 'bg-yellow-100 text-yellow-700' : ''}
+            ${quotation.status === 'sent' ? 'bg-blue-100 text-blue-700' : ''}
+            ${quotation.status === 'accepted' ? 'bg-green-100 text-green-700' : ''}
+            ${quotation.status === 'rejected' ? 'bg-red-100 text-red-700' : ''}
+          `}
+                            >
+                                {quotation.status.charAt(0).toUpperCase() + quotation.status.slice(1)}
+                            </span>
+                        </div>
+                        <div className="text-sm text-gray-500 mb-1">{quotation.customerName}</div>
+                        <div className="text-sm text-gray-500 mb-1">{quotation.customerEmail}</div>
+                        <div className="text-sm font-bold text-gray-900">₹{quotation.total.toLocaleString()}</div>
+                        <div className="text-xs text-gray-400 mt-1">{new Date(quotation.createdAt).toLocaleDateString()}</div>
+                    </Link>
+                ))}
+            </div>
+
         </div>
     );
 }
