@@ -26,7 +26,7 @@ pnpm-debug.log*
 out/
 build/
 .vercel/
-
+zad
 
 # ===============================
 # Express / Backend
