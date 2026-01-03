@@ -27,9 +27,6 @@ out/
 build/
 .vercel/
 
-authme
-app/authme
-app/authme/page.jsx
 
 # ===============================
 # Express / Backend
