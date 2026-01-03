@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff } from 'lucide-react';
-import { Boxes } from "../../components/ui/background-boxes";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -18,6 +17,7 @@ export default function RegisterPage() {
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const handleInputChange = (e) => {
@@ -74,118 +74,119 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black relative overflow-hidden flex items-center justify-center p-4 sm:p-6">
-
-      {/* Background Boxes */}
-      <div className="absolute inset-0 z-0">
-        <Boxes />
-      </div>
-
+    <div className="min-h-screen bg-[#f8f7f4] flex items-center justify-center p-4 sm:p-6">
       {/* REGISTER CARD */}
-      <div className="relative z-10 w-full max-w-md bg-white/90 backdrop-blur-md p-8 sm:p-10 rounded-2xl shadow-xl flex flex-col">
+      <div className="w-full max-w-md bg-white p-8 sm:p-10 rounded-3xl shadow-sm border border-gray-100">
+
         {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900">Sign up</h1>
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 mb-2">
+            Create account
+          </h1>
+        
         </div>
 
         {/* Register Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            className="w-full px-5 py-4 bg-gray-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
-            placeholder="Name"
-            required
-          />
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            className="w-full px-5 py-4 bg-gray-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
-            placeholder="Email"
-            required
-          />
-
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              className="w-full px-5 py-4 bg-gray-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              placeholder="Password"
-              required
-              minLength={6}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          </div>
-
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              className="w-full px-5 py-4 bg-gray-100 rounded-xl text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              placeholder="Confirm Password"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
-            >
-              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-            </button>
-          </div>
-
-          <p className="text-gray-500 text-sm pl-1">
-            Password should include minimum 6 characters
-          </p>
-          <div className="flex items-start gap-3 pt-2">
-            <input
-              type="checkbox"
-              name="termsAccepted"
-              checked={formData.termsAccepted}
-              onChange={handleInputChange}
-              className="w-5 h-5 mt-0.5 rounded border-gray-300 text-gray-900 focus:ring-2 focus:ring-gray-300"
-            />
-            <label className="text-gray-600 text-sm leading-tight">
-              Accept our{' '}
-              <span className="text-gray-900 font-semibold underline">terms & conditions</span>
-              {' & '}
-              <span className="text-gray-900 font-semibold underline">privacy policy</span>
-              {' '}by selecting Continue
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Full Name
             </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 text-base bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+              placeholder="Enter your full name"
+              required
+            />
           </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full px-4 py-3 text-base bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+              placeholder="Enter your email"
+              required
+            />
+          </div>
+
+          {/* Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 text-base bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                placeholder="Create a password"
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 text-base bg-white border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all"
+                placeholder="Confirm your password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Password hint */}
+          <p className="text-xs text-gray-500">
+            Password must be at least 6 characters long
+          </p>
+
+          {/* Sign Up Button */}
           <button
             type="submit"
-            disabled={loading ||
-              formData.password !== formData.confirmPassword }
-            className="w-full bg-gray-900 text-white py-4 rounded-xl font-semibold text-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all mt-4"
+            disabled={loading || formData.password !== formData.confirmPassword}
+            className="w-full bg-gray-900 text-white py-3.5 rounded-xl font-medium text-base hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
           >
-            {loading ? 'Signing up...' : 'Sign up'}
+            {loading ? 'Creating account...' : 'Create account'}
           </button>
         </form>
 
-        {/* Already have account */}
-        <div className="text-center mt-6">
-          <p className="text-gray-600">
-            Already have an account?{' '}
-            <Link href="/login" className="text-gray-900 font-bold">
-              Sign in here.
-            </Link>
-          </p>
-        </div>
+       
       </div>
     </div>
   );
