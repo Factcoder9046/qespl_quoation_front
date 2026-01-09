@@ -24,13 +24,21 @@ export default function CreateQuotationPage() {
     customerAddress: '',
     customerCompanyName: '',
     shippingDetails: '',
-    notes: '',
-    taxPercentage: 0
+    notes: ''
   });
 
   const [items, setItems] = useState([
-    { description: '', quantity: 1, rate: 0, productId: '', tax: 0 }
+    {
+      productId: '',
+      productName: '',
+      description: '',
+      quantity: 1,
+      rate: 0,
+      tax: 0,
+      parameters: []
+    }
   ]);
+
 
   useEffect(() => {
     fetchCompanyDetails();
@@ -69,6 +77,16 @@ export default function CreateQuotationPage() {
     } catch {
       console.error('Failed to load customers');
     }
+  };
+
+  const handleParameterChange = (itemIndex, paramIndex, specIndex, value) => {
+    const newItems = [...items];
+    newItems[itemIndex]
+      .parameters[paramIndex]
+      .specs[specIndex]
+      .value = value;
+
+    setItems(newItems);
   };
 
   const handleInputChange = (e) => {
@@ -115,10 +133,13 @@ export default function CreateQuotationPage() {
         newItems[index] = {
           ...newItems[index],
           productId: product._id,
-          description: product.productName,
+          productName: product.productName,
+          description: product.description || '',
           rate: product.price,
-          tax: product.tax,
-          quantity: 1
+          tax: product.tax || 0,
+          quantity: 1,
+          parameters: product.parameters || [],
+          generalSpecifications: product.generalSpecifications || []
         };
         setItems(newItems);
       }
@@ -129,7 +150,9 @@ export default function CreateQuotationPage() {
         description: '',
         quantity: 1,
         rate: 0,
-        tax: 0
+        tax: 0,
+        parameters: [],
+        generalSpecifications: []
       };
       setItems(newItems);
     }
@@ -137,16 +160,46 @@ export default function CreateQuotationPage() {
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...items];
-    newItems[index][field] = field === 'description' ? value : parseFloat(value) || 0;
+
+    if (field === 'description') {
+      newItems[index][field] = value;
+    } else {
+      newItems[index][field] = Number(value) || 0;
+    }
+
     setItems(newItems);
   };
 
-  const addItem = () => setItems([...items, { description: '', quantity: 1, rate: 0, productId: '', tax: 0 }]);
+
+  const addItem = () =>
+    setItems([
+      ...items,
+      {
+        productId: '',
+        productName: '',
+        description: '',
+        quantity: 1,
+        rate: 0,
+        tax: 0,
+        parameters: []
+      }
+    ]);
   const removeItem = (index) => items.length > 1 && setItems(items.filter((_, i) => i !== index));
 
   const calculateSubtotal = () => items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
-  const calculateTax = () => (calculateSubtotal() * parseFloat(formData.taxPercentage || 0)) / 100;
-  const calculateTotal = () => calculateSubtotal() + calculateTax();
+
+  // ✅ ADD THIS
+  const calculateItemTax = (item) =>
+    (item.quantity * item.rate * item.tax) / 100;
+
+  // ✅ ADD THIS
+  const calculateTotalTax = () =>
+    items.reduce((sum, item) => sum + calculateItemTax(item), 0);
+
+  // ✅ UPDATE TOTAL
+  const calculateTotal = () =>
+    calculateSubtotal() + calculateTotalTax();
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -156,7 +209,7 @@ export default function CreateQuotationPage() {
     }
     setLoading(true);
     try {
-      const taxAmount = calculateTax();
+      const taxAmount = calculateTotalTax();
       await quotationAPI.create({
         ...formData,
         items,
@@ -309,13 +362,35 @@ export default function CreateQuotationPage() {
                     {products.map(p => <option key={p._id} value={p._id}>{p.productName} - ₹{p.price} ({p.unitOfMeasure}) - Tax: {p.tax}%</option>)}
                   </select>
                 </div>
+                {item.productName && (
+                  <p className="text-sm font-semibold text-gray-900 mb-2">
+                    {item.productName}
+                  </p>
+                )}
+
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                   <ItemInput colSpan={5} label="Description *" value={item.description} onChange={(v) => handleItemChange(i, 'description', v)} />
                   <ItemInput colSpan={2} label="Quantity *" type="number" value={item.quantity} onChange={(v) => handleItemChange(i, 'quantity', v)} min={1} />
                   <ItemInput colSpan={2} label="Rate (₹) *" type="number" value={item.rate} onChange={(v) => handleItemChange(i, 'rate', v)} min={0} step={0.01} />
+                  <ItemInput
+                    colSpan={1}
+                    label="Tax %"
+                    type="number"
+                    value={item.tax}
+                    onChange={(v) => handleItemChange(i, 'tax', v)}
+                    min={0}
+                    step={0.01}
+                  />
+
                   <div className="md:col-span-2 px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold text-gray-900 flex items-center justify-center">
                     ₹{(item.quantity * item.rate).toFixed(2)}
                   </div>
+                  {item.tax > 0 && (
+                    <p className="text-xs text-gray-600 mt-1">
+                      Tax: {item.tax}%
+                    </p>
+                  )}
+
                   <div className="md:col-span-1 flex items-end">
                     {items.length > 1 && (
                       <button type="button" onClick={() => removeItem(i)} className="w-full p-3 text-red-600 hover:bg-red-50 rounded-xl transition-colors">
@@ -324,6 +399,38 @@ export default function CreateQuotationPage() {
                     )}
                   </div>
                 </div>
+                {item.parameters?.length > 0 && (
+                  <div className="mt-3 p-3 bg-white border border-gray-200 rounded-lg text-xs">
+                    {item.parameters.map((param, pi) => (
+                      <div key={pi} className="mb-3">
+                        <p className="font-semibold text-gray-800 mb-1">
+                          {param.title}
+                        </p>
+
+                        <div className="space-y-2">
+                          {param.specs.map((spec, si) => (
+                            <div key={si} className="flex gap-2 items-center">
+                              <span className="w-32 text-gray-600">
+                                {spec.label}
+                              </span>
+
+                              <input
+                                type="text"
+                                value={spec.value}
+                                onChange={(e) =>
+                                  handleParameterChange(i, pi, si, e.target.value)
+                                }
+                                className="flex-1 px-2 py-1 border border-gray-200 rounded-md text-xs focus:ring-1 focus:ring-gray-900 outline-none"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+
               </div>
             ))}
           </div>
@@ -335,22 +442,13 @@ export default function CreateQuotationPage() {
                 <span className="text-sm font-medium text-gray-700">Subtotal:</span>
                 <span className="text-lg font-bold text-gray-900">₹{calculateSubtotal().toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center gap-4">
-                <label className="text-sm font-medium text-gray-700">Tax (%):</label>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="number"
-                    name="taxPercentage"
-                    value={formData.taxPercentage}
-                    onChange={handleInputChange}
-                    className="w-24 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none text-sm"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                  />
-                  <span className="text-sm font-medium text-gray-600">= ₹{calculateTax().toFixed(2)}</span>
-                </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-gray-700">Tax:</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  ₹{calculateTotalTax().toFixed(2)}
+                </span>
               </div>
+
               <div className="pt-4 border-t-2 border-gray-200 flex justify-between items-center">
                 <span className="text-lg font-bold text-gray-900">Total:</span>
                 <span className="text-2xl font-bold text-gray-900">₹{calculateTotal().toFixed(2)}</span>

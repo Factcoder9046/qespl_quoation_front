@@ -1,4 +1,5 @@
 'use client';
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI } from '@/lib/api';
@@ -11,6 +12,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  /* ================= CHECK AUTH ================= */
   useEffect(() => {
     checkAuth();
   }, []);
@@ -25,6 +27,7 @@ export function AuthProvider({ children }) {
           try {
             const { data } = await authAPI.getMe();
             setUser(data.user);
+            localStorage.setItem('user', JSON.stringify(data.user));
           } catch (error) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
@@ -39,26 +42,33 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /* ================= LOGIN ================= */
   const login = async (credentials) => {
     try {
       const { data } = await authAPI.login(credentials);
-      
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
       }
-      
+
       setUser(data.user);
       toast.success('Login successful! 🎉');
-      
-      // Check if company details exist for admin
+
+      // Admin company check
       if (data.user.role === 'admin') {
         try {
-          const companyCheck = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/company/check`, {
-            headers: { 'Authorization': `Bearer ${data.token}` }
-          });
-          const companyData = await companyCheck.json();
-          
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/company/check`,
+            {
+              headers: {
+                Authorization: `Bearer ${data.token}`,
+              },
+            }
+          );
+
+          const companyData = await res.json();
+
           setTimeout(() => {
             if (!companyData.exists) {
               router.push('/company-setup');
@@ -67,7 +77,7 @@ export function AuthProvider({ children }) {
             }
             router.refresh();
           }, 100);
-        } catch (error) {
+        } catch {
           router.push('/dashboard');
         }
       } else {
@@ -76,14 +86,17 @@ export function AuthProvider({ children }) {
           router.refresh();
         }, 100);
       }
-      
+
       return data;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed!');
+      toast.error(
+        error.response?.data?.message || 'Login failed!'
+      );
       throw error;
     }
   };
 
+  /* ================= LOGOUT ================= */
   const logout = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('token');
@@ -94,8 +107,26 @@ export function AuthProvider({ children }) {
     router.push('/login');
   };
 
+  /* ================= UPDATE USER (🔥 NEW) ================= */
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        checkAuth,
+        updateUser, // 👈 IMPORTANT
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

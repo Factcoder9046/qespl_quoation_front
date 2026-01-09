@@ -1,20 +1,16 @@
 import axios from 'axios';
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL
-    ? `${process.env.NEXT_PUBLIC_API_URL}/api`
-    : 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}/api`
+  : 'http://localhost:5000/api';
 
-
+/* ================= AXIOS INSTANCE ================= */
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  timeout: 10000
+  timeout: 30000
 });
 
-// Request interceptor
+/* ================= REQUEST INTERCEPTOR ================= */
 api.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
@@ -28,7 +24,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor
+/* ================= RESPONSE INTERCEPTOR ================= */
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -41,14 +37,26 @@ api.interceptors.response.use(
   }
 );
 
-// Auth APIs
+/* ================= AUTH APIs ================= */
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
-  getMe: () => api.get('/auth/me')
+  getMe: () => api.get('/auth/me'),
+
+  // 🔐 Change Password
+  changePassword: (data) =>
+    api.put('/auth/change-password', data),
+
+  // 🖼 Upload Avatar
+  uploadAvatar: (formData) =>
+    api.put('/auth/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
 };
 
-// User APIs
+/* ================= USER APIs ================= */
 export const userAPI = {
   getAll: () => api.get('/users'),
   getOne: (id) => api.get(`/users/${id}`),
@@ -57,19 +65,20 @@ export const userAPI = {
   delete: (id) => api.delete(`/users/${id}`)
 };
 
-// Quotation APIs
+/* ================= QUOTATION APIs ================= */
 export const quotationAPI = {
   getAll: () => api.get('/quotations'),
   getDeleted: () => api.get('/quotations/deleted'),
   getOne: (id) => api.get(`/quotations/${id}`),
   create: (data) => api.post('/quotations', data),
-  update: (id, data) => api.put(`/quotations/${id}`, data),
+  update: (id, data) => api.put(`/quotations/${id}`),
   delete: (id) => api.delete(`/quotations/${id}`),
   restore: (id) => api.put(`/quotations/${id}/restore`),
-  permanentDelete: (id) => api.delete(`/quotations/${id}/permanent`)
+  permanentDelete: (id) =>
+    api.delete(`/quotations/${id}/permanent`)
 };
 
-// Company APIs
+/* ================= COMPANY APIs ================= */
 export const companyAPI = {
   getMyCompany: () => api.get('/company/my-company'),
   create: (data) => api.post('/company', data),
@@ -77,21 +86,21 @@ export const companyAPI = {
   check: () => api.get('/company/check')
 };
 
-// Product APIs
+/* ================= PRODUCT APIs ================= */
 export const productAPI = {
   getAll: () => api.get('/products'),
   getOne: (id) => api.get(`/products/${id}`),
   create: (data) => api.post('/products', data),
-  update: (id, data) => api.put(`/products/${id}`, data),
+  update: (id, data) => api.put(`/products/${id}`),
   delete: (id) => api.delete(`/products/${id}`)
 };
 
-// Customer APIs
+/* ================= CUSTOMER APIs ================= */
 export const customerAPI = {
   getAll: () => api.get('/customers'),
   getOne: (id) => api.get(`/customers/${id}`),
   create: (data) => api.post('/customers', data),
-  update: (id, data) => api.put(`/customers/${id}`, data),
+  update: (id, data) => api.put(`/customers/${id}`),
   delete: (id) => api.delete(`/customers/${id}`)
 };
 

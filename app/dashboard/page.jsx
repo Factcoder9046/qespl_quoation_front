@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { quotationAPI, userAPI } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
-import { FileText, Users, Clock, Plus, ArrowRight, TrendingUp, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import {
     BarChart,
     Bar,

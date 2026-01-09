@@ -16,7 +16,9 @@ export default function EditProductPage() {
     price: '',
     unitOfMeasure: 'Piece',
     tax: 0,
-    description: ''
+    description: '',
+    parameters: [],
+    generalSpecifications: []
   });
 
   const unitOptions = [
@@ -30,7 +32,17 @@ export default function EditProductPage() {
   const fetchProduct = async () => {
     try {
       const { data } = await productAPI.getOne(params.id);
-      setFormData(data.product);
+      setFormData({
+        productName: data.product.productName || '',
+        price: data.product.price?.toString() || '',
+        unitOfMeasure: data.product.unitOfMeasure || 'Piece',
+        tax: data.product.tax ?? 0,
+        description: data.product.description || '',
+        parameters: data.product.parameters || [],
+        generalSpecifications: (data.product.generalSpecifications || []).map(spec =>
+          typeof spec === 'string' ? { text: spec } : spec
+        )
+      });
     } catch (error) {
       toast.error('Failed to load product');
       router.push('/dashboard/products');
@@ -48,11 +60,18 @@ export default function EditProductPage() {
     setLoading(true);
 
     try {
+      const cleanedGeneralSpecs = (formData.generalSpecifications || [])
+        .filter(spec => spec.text?.trim())
+        .map(spec => ({ text: spec.text.trim() }));
+
       await productAPI.update(params.id, {
         ...formData,
         price: parseFloat(formData.price),
-        tax: parseFloat(formData.tax)
+        tax: parseFloat(formData.tax),
+        parameters: formData.parameters.filter(p => p.title.trim()),
+        generalSpecifications: cleanedGeneralSpecs // ✅ ADD THIS
       });
+
       toast.success('Product updated successfully! 🎉');
       router.push('/dashboard/products');
     } catch (error) {
@@ -61,6 +80,7 @@ export default function EditProductPage() {
       setLoading(false);
     }
   };
+
 
   if (fetching) {
     return (
@@ -172,7 +192,122 @@ export default function EditProductPage() {
                 />
               </div>
             </div>
+
+            {/* PARAMETERS SECTION */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+              <h3 className="font-semibold mb-4">Parameters</h3>
+
+              {formData.parameters.map((param, pIndex) => (
+                <div key={pIndex} className="border rounded-lg p-4 mb-4">
+
+                  <input
+                    value={param.title}
+                    onChange={(e) => {
+                      const updated = [...formData.parameters];
+                      updated[pIndex].title = e.target.value;
+                      setFormData({ ...formData, parameters: updated });
+                    }}
+                    placeholder="Parameter Title"
+                    className="w-full mb-3 px-3 py-2 border rounded"
+                  />
+
+                  {param.specs.map((spec, sIndex) => (
+                    <div key={sIndex} className="grid grid-cols-2 gap-2 mb-2">
+                      <input
+                        value={spec.label}
+                        placeholder="Label"
+                        onChange={(e) => {
+                          const updated = [...formData.parameters];
+                          updated[pIndex].specs[sIndex].label = e.target.value;
+                          setFormData({ ...formData, parameters: updated });
+                        }}
+                        className="px-3 py-2 border rounded"
+                      />
+                      <input
+                        value={spec.value}
+                        placeholder="Value"
+                        onChange={(e) => {
+                          const updated = [...formData.parameters];
+                          updated[pIndex].specs[sIndex].value = e.target.value;
+                          setFormData({ ...formData, parameters: updated });
+                        }}
+                        className="px-3 py-2 border rounded"
+                      />
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = [...formData.parameters];
+                      updated[pIndex].specs.push({ label: '', value: '' });
+                      setFormData({ ...formData, parameters: updated });
+                    }}
+                    className="text-sm text-blue-600"
+                  >
+                    + Add Row
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    parameters: [...formData.parameters, { title: '', specs: [{ label: '', value: '' }] }]
+                  })
+                }
+                className="text-sm text-green-600"
+              >
+                + Add Parameter Section
+              </button>
+            </div>
+
           </div>
+
+          {/* GENERAL SPECIFICATIONS */}
+          {formData.generalSpecifications.map((spec, index) => (
+            <div key={index} className="flex items-center gap-3 mb-2">
+              <span className="text-lg leading-none">•</span>
+              <input
+                type="text"
+                value={spec.text || ''}
+                placeholder="e.g. SD Card: 8GB"
+                onChange={(e) => {
+                  const updated = [...formData.generalSpecifications];
+                  updated[index].text = e.target.value;
+                  setFormData({ ...formData, generalSpecifications: updated });
+                }}
+                className="flex-1 px-3 py-2 border rounded-md text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = formData.generalSpecifications.filter((_, i) => i !== index);
+                  setFormData({ ...formData, generalSpecifications: updated });
+                }}
+                className="text-red-500 text-sm"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+
+          {/* Button to add a new specification */}
+          <button
+            type="button"
+            onClick={() =>
+              setFormData({
+                ...formData,
+                generalSpecifications: [...formData.generalSpecifications, { text: '' }]
+              })
+            }
+            className="text-blue-600 text-sm mt-2"
+          >
+            + Add Specification
+          </button>
+
 
           {/* Price Preview */}
           {formData.price && (
@@ -218,7 +353,7 @@ export default function EditProductPage() {
                 </>
               )}
             </button>
-            
+
             <Link
               href="/dashboard/products"
               className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
@@ -228,6 +363,6 @@ export default function EditProductPage() {
           </div>
         </form>
       </div>
-    </div>
+    </div >
   );
 }

@@ -62,16 +62,64 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
-    try {
-      await userAPI.delete(id);
-      toast.success('User deleted successfully');
-      fetchUsers();
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete user');
-    }
-  };
+  const handleDelete = (id) => {
+  toast.custom(
+    (t) => (
+      <div
+        className={`
+          ${t.visible ? 'animate-enter' : 'animate-leave'}
+          backdrop-blur-xl bg-white/70
+          shadow-2xl border border-white/30
+          rounded-2xl p-5 w-[340px]
+        `}
+      >
+        <div className="flex items-start gap-4">
+          <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center">
+            <Trash2 className="w-5 h-5 text-red-600" />
+          </div>
+
+          <div className="flex-1">
+            <h4 className="text-sm font-semibold text-gray-900">
+              Delete user?
+            </h4>
+            <p className="text-xs text-gray-600 mt-1">
+              This action cannot be undone.
+            </p>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="px-3 py-1.5 text-xs rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={async () => {
+                  toast.dismiss(t.id);
+                  try {
+                    await userAPI.delete(id);
+                    toast.success('User deleted successfully');
+                    fetchUsers();
+                  } catch (error) {
+                    toast.error(
+                      error.response?.data?.message || 'Failed to delete user'
+                    );
+                  }
+                }}
+                className="px-3 py-1.5 text-xs rounded-lg bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    { position: 'top-center' }
+  );
+};
+
 
   const toggleStatus = async (id, isActive) => {
     try {

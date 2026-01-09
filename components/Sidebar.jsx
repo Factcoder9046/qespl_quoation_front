@@ -14,9 +14,10 @@ import {
   Building2,
   Package,
   UserCircle,
-  Settings,
+  ShieldUser,
   TrendingUp,
-  Briefcase
+  Briefcase,
+  Trash2
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -53,6 +54,17 @@ export default function Sidebar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Get avatar URL
+  const getAvatarUrl = () => {
+    if (user?.avatar) {
+      if (user.avatar.startsWith('http')) {
+        return user.avatar;
+      }
+      return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${user.avatar}`;
+    }
+    return null;
+  };
+
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', adminOnly: false },
     { icon: FileText, label: 'Quotations', href: '/dashboard/quotations', adminOnly: false },
@@ -60,7 +72,7 @@ export default function Sidebar() {
     { icon: UserCircle, label: 'Customers', href: '/dashboard/customers', adminOnly: false },
     { icon: Building2, label: 'Business Info', href: '/dashboard/business-info', adminOnly: true },
     { icon: Users, label: 'Users', href: '/dashboard/users', adminOnly: true },
-    { icon: Settings, label: 'Settings', href: '/dashboard/settings', adminOnly: false },
+    { icon: Trash2, label: 'Recycle Bin', href: '/dashboard/recyclebin', adminOnly: false },
   ];
 
   const projects = [
@@ -72,6 +84,8 @@ export default function Sidebar() {
     if (href === '/dashboard') return pathname === '/dashboard';
     return pathname.startsWith(href);
   };
+
+  const avatarUrl = getAvatarUrl();
 
   return (
     <>
@@ -141,27 +155,57 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* User Details */}
-        {user && !collapsed && (
-          <div className="px-3 pb-3">
-            <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50">
-              <div className="w-9 h-9 rounded-full bg-gray-900 flex items-center justify-center">
-                <span className="text-white text-sm font-semibold">
-                  {user.name?.charAt(0).toUpperCase()}
-                </span>
+    
+        {/* User Profile Link at bottom */}
+        {user && (
+          <div className="px-3 pb-3 mt-auto">
+            <Link
+              href="/dashboard/profile"
+              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all
+        ${pathname === '/dashboard/profile' ? 'bg-gray-900 text-white' : 'text-gray-700 hover:bg-gray-100'}
+        ${collapsed ? 'justify-center' : 'justify-start'}
+      `}
+            >
+              {/* Avatar with Profile Picture */}
+              <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 ring-2 ring-gray-200">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={user.name || 'User'}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to initials if image fails to load
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = `
+                        <div class="w-full h-full bg-gray-900 flex items-center justify-center">
+                          <span class="text-white font-semibold text-sm">
+                            ${user.name?.charAt(0).toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                      `;
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+                    <span className="text-white font-semibold text-sm">
+                      {user.name?.charAt(0).toUpperCase() || 'U'}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">
-                  {user.name}
-                </p>
-                <p className="text-xs text-gray-500 capitalize">
-                  {user.role}
-                </p>
-              </div>
-            </div>
+              {/* Name + Role */}
+              {!collapsed && (
+                <div className="flex flex-col min-w-0">
+                  <p className="text-sm font-semibold truncate">{user.name}</p>
+                  <p className="text-xs text-gray-400 capitalize">{user.role}</p>
+                </div>
+              )}
+            </Link>
           </div>
         )}
+
+
 
 
         {/* Logout Button */}

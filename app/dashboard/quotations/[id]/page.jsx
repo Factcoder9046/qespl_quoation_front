@@ -4,7 +4,7 @@ import { quotationAPI } from '@/lib/api';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Calendar, Mail, Phone, MapPin, Download, Trash2, Printer } from 'lucide-react';
+import { ArrowLeft, Calendar, Mail, Phone, MapPin, Download, Trash2, FileSpreadsheet } from 'lucide-react';
 
 export default function ViewQuotationPage() {
   const [quotation, setQuotation] = useState(null);
@@ -40,145 +40,415 @@ export default function ViewQuotationPage() {
     }
   };
 
- const downloadPDF = async () => {
-  setDownloading(true);
-  try {
-    const { default: jsPDF } = await import('jspdf');
-    await import('jspdf-autotable');
+  const downloadPDF = async () => {
+    setDownloading(true);
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      await import('jspdf-autotable');
 
-    // Detect if user is on mobile (screen width less than 768px)
-    const isMobile = window.innerWidth < 768;
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const leftMargin = 30;
+      const rightMargin = 20;
 
-    // Adjust page size and margins for mobile
-    const doc = new jsPDF('p', 'mm', 'a4'); // still A4, but we'll adjust fonts/margins
-    const pageWidth = doc.internal.pageSize.width;
-    const pageHeight = doc.internal.pageSize.height;
+      // ================= PAGE 1 =================
+      doc.addImage('/letterhead.png.jpeg', 'JPEG', 0, 0, pageWidth, pageHeight);
 
-    const leftMargin = isMobile ? 10 : 20;
-    const rightMargin = isMobile ? 10 : 20;
+      let y = 65;
 
-    const fontSizeTitle = isMobile ? 14 : 18;
-    const fontSizeNormal = isMobile ? 8 : 10;
-    const fontSizeTotals = isMobile ? 10 : 12;
+      // TO
+      doc.setFont('times', 'bold');
+      doc.setFontSize(11);
+      doc.text('To', leftMargin, y);
+      y += 6;
 
-    // Add letterhead
-    doc.addImage('/letterhead.png.jpeg', 'JPEG', 0, 0, pageWidth, pageHeight);
+      // CUSTOMER NAME
+      doc.setFontSize(11);
+      doc.text(`Mr ${quotation.customerName}`, leftMargin, y);
+      y += 6;
 
-    let yPos = isMobile ? 70 : 95;
+      // COMPANY NAME
+      if (quotation.customerCompanyName) {
+        doc.setFontSize(11);
+        doc.text(quotation.customerCompanyName, leftMargin, y);
+        y += 6;
+      }
 
-    // Title
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(fontSizeTitle);
-    doc.text('QUOTATION', pageWidth / 2, yPos, { align: 'center' });
+      // COUNTRY
+      doc.text('India.', leftMargin, y);
 
-    // Quotation number and date
-    yPos += isMobile ? 10 : 12;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(fontSizeNormal);
-    doc.text(`Quotation No: ${quotation.quotationNumber}`, pageWidth - rightMargin, yPos, { align: 'right' });
-    yPos += isMobile ? 5 : 6;
-    doc.text(`Date: ${new Date(quotation.createdAt).toLocaleDateString()}`, pageWidth - rightMargin, yPos, { align: 'right' });
+      // WHITE SPACE AFTER TO BLOCK
+      // y += 22;
 
-    // Customer details
-    yPos += isMobile ? 10 : 14;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Bill To:', leftMargin, yPos);
-    yPos += isMobile ? 4 : 6;
-    doc.setFont('helvetica', 'normal');
+      // -------- RIGHT SIDE DATE & REF (SAFE) --------
+      const rightX = pageWidth - rightMargin;
 
-    const customerDetails = [
-      quotation.customerName,
-      quotation.customerEmail,
-      quotation.customerPhone,
-      quotation.customerAddress
-    ].filter(Boolean);
+      doc.setTextColor(0, 51, 153);
+      doc.setFontSize(10);
+      doc.setFont('times', 'bold');
+      doc.text(
+        `Quotation Date: ${new Date(quotation.createdAt).toLocaleDateString('en-GB')}`,
+        rightX,
+        y - 30,
+        { align: 'right' }
+      );
 
-    customerDetails.forEach(detail => {
-      const lines = doc.splitTextToSize(detail, pageWidth - leftMargin - rightMargin);
-      lines.forEach(line => {
-        doc.text(line, leftMargin, yPos);
-        yPos += isMobile ? 4 : 5;
+      y += 6;
+
+      doc.text(
+        `Quotation Ref: ${quotation.quotationNumber}`,
+        rightX,
+        y - 30,
+        { align: 'right' }
+      );
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('times', 'normal');
+
+
+      // GAP BEFORE SUBJECT
+      y += 20;
+
+      // SUBJECT
+      const productName =
+        quotation.items[0]?.productName ||
+        quotation.items[0]?.description ||
+        'Product';
+
+      doc.setFont('times', 'bold');
+      doc.setFontSize(11);
+
+      // 1️⃣ "Sub:" → BLACK
+      doc.setTextColor(0, 0, 0);
+      doc.text('Sub:', leftMargin, y);
+
+      let x = leftMargin + doc.getTextWidth('Sub: ');
+
+      // 2️⃣ Middle text → BLUE
+      doc.setTextColor(0, 51, 153);
+      const middleText = 'Quotation as per your requirement ';
+      doc.text(middleText, x, y);
+
+      x += doc.getTextWidth(middleText);
+
+      // 3️⃣ Product name → BLACK
+      doc.setTextColor(0, 0, 0);
+      doc.text(`${productName}.`, x, y);
+
+      // reset (important)
+      doc.setFont('times', 'normal');
+
+
+      // GAP BEFORE BODY (watermark safe)
+      y += 18;
+
+      doc.setFont('times', 'normal');
+      doc.setFontSize(11);
+
+      const maxWidth = pageWidth - leftMargin - rightMargin;
+      const lineHeight = 5;
+
+      doc.text('Dear Sir,', leftMargin, y);
+      y += lineHeight * 2;
+
+      // Full paragraph with inline bold productName
+      const fullPara = `In response to your inquiry for ${productName}, we are pleased to submit herewith our Company Quotation. We are pleased to provide the best offer for your requirement. We hope you will find our proposal in line with your requirement and our prices competitive.
+Assuring you of our best services and looking forward to build a long-term business relation with your esteemed organization. For any further assistance please feel free to contact us. We look forward to receiving your valuable order and ensure our best attention to your requirement.`;
+
+      // Split full paragraph to lines using full maxWidth
+      let allLines = doc.splitTextToSize(fullPara, maxWidth);
+
+      // Render lines with inline bold handling for first line (productName)
+      let currentY = y;
+      for (let i = 0; i < allLines.length; i++) {
+        let lineText = allLines[i];
+        let renderX = leftMargin;
+
+        // Check if this line contains productName and needs inline bold (typically first line)
+        if (i === 0 && productName && fullPara.includes(productName)) {
+          // Split first line around productName for inline bold
+          const beforeProduct = lineText.split(productName)[0];
+          const afterProduct = lineText.split(productName)[1] || '';
+
+          // Render before part (normal)
+          if (beforeProduct) {
+            doc.text(beforeProduct, renderX, currentY);
+            renderX += doc.getTextWidth(beforeProduct);
+          }
+
+          // Render productName (bold)
+          doc.setFont('times', 'bold');
+          doc.text(productName, renderX, currentY);
+          renderX += doc.getTextWidth(productName);
+          doc.setFont('times', 'normal');
+
+          // Render after part (normal)
+          if (afterProduct) {
+            doc.text(afterProduct, renderX, currentY);
+          }
+        } else {
+          // Normal line
+          doc.text(lineText, renderX, currentY);
+        }
+
+        currentY += lineHeight;
+      }
+
+      y = currentY + 10;
+
+
+      // ================= CLOSING + SIGNATURE (ONE BLOCK) =================
+      const closingFontSize = 11;
+      const lh = 5;
+
+      doc.setFontSize(closingFontSize);
+      doc.setFont('times', 'normal');
+
+      // Small gap after body
+      y += lh * 2;
+
+      // Thanking you
+      doc.text('Thanking you in advance', leftMargin, y);
+      y += lh;
+
+      // Yours faithfully
+      doc.text('Yours faithfully,', leftMargin, y);
+      y += lh;
+
+      // Company name (bold but SAME size)
+      doc.setFont('times', 'normal');
+      doc.text('Quick Engineering Solutions', leftMargin, y);
+      y += lh;
+
+      // Person name
+      doc.setFont('times', 'normal');
+      doc.text(quotation.createdBy?.name || 'qes', leftMargin, y);
+      y += lh;
+
+      // Phone
+      doc.text(quotation.createdBy?.phone || '+91-8755166199', leftMargin, y);
+
+
+      // ================= PAGE 2 =================
+      doc.addPage();
+
+      doc.setFontSize(22);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Quotation', pageWidth / 2, 40, { align: 'center' });
+
+      let startY = 50;
+
+      quotation.items.forEach((item, index) => {
+
+        doc.autoTable({
+          startY,
+          head: [['S.no', 'Items', 'Rate', 'Qty', 'Amount']],
+          body: [[
+            index + 1,
+            '', // 👈 Items column manual draw
+            `₹${item.rate}/-`,
+            item.quantity,
+            `₹${item.rate * item.quantity}/-`
+          ]],
+          theme: 'grid',
+
+          headStyles: {
+            fillColor: [22, 160, 133],
+            textColor: 255,
+            fontStyle: 'bold'
+          },
+
+          columnStyles: {
+            0: { cellWidth: 17 },
+            1: { cellWidth: 110 },
+            2: { cellWidth: 22 },
+            3: { cellWidth: 18 },
+            4: { cellWidth: 25 }
+          },
+
+          styles: {
+            fontSize: 9,
+            cellPadding: 3,
+            valign: 'top'
+          },
+
+          didDrawCell: function (data) {
+            if (data.section === 'body' && data.column.index === 1) {
+
+              let x = data.cell.x + 2;
+              let y = data.cell.y + 4;
+
+              /* ================= PRODUCT NAME ================= */
+              doc.setFont('helvetica', 'bold');
+              doc.text(item.productName, x, y);
+              y += 4;
+
+              /* ================= MAKE ================= */
+              if (item.description) {
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Make: ${item.description}`, x, y);
+                y += 6;
+              }
+              doc.text("Parameters:", x, y);
+              y += 4;
+              /* ================= PARAMETERS + SPECIFICATIONS ================= */
+              if (item.parameters?.length) {
+
+                item.parameters.forEach(param => {
+
+                  // 🔹 Parameter title (Rain Fall, Wind Speed...)
+                  doc.setFont('helvetica', 'bold');
+                  doc.setTextColor(200, 0, 0);
+                  doc.text(param.title, x, y);
+                  doc.setTextColor(0);
+                  y += 2;
+
+                  // 🔹 Specification table under parameter
+                  doc.autoTable({
+                    startY: y,
+                    margin: { left: x },
+                    tableWidth: 105,
+                    body: param.specs.map(s => [s.label, s.value]),
+                    theme: 'grid',
+                    styles: {
+                      fontSize: 7,
+                      cellPadding: 1
+                    },
+                    columnStyles: {
+                      0: { cellWidth: 65 },
+                      1: { cellWidth: 40 }
+                    }
+                  });
+
+                  y = doc.lastAutoTable.finalY + 3;
+                });
+              }
+
+              /* ================= GENERAL SPEC ================= */
+              if (item.generalSpecifications?.length) {
+                doc.setFont('helvetica', 'bold');
+                doc.text('General Specification:', x, y);
+                y += 3;
+
+                doc.setFont('helvetica', 'normal');
+                item.generalSpecifications.forEach(gs => {
+                  if (gs?.text) {
+                    doc.text(`• ${gs.text}`, x + 2, y);
+                    y += 3;
+                  }
+                });
+
+              }
+            }
+          }
+        });
+
+        startY = doc.lastAutoTable.finalY + 6;
       });
-    });
 
-    yPos += isMobile ? 8 : 10;
 
-    // Items table
-    doc.autoTable({
-      startY: yPos,
-      margin: { left: leftMargin, right: rightMargin },
-      head: [['Description','Qty','Rate (₹)','Tax (%)','Amount (₹)']],
-      body: quotation.items.map(i => [
-        i.description,
-        i.quantity.toString(),
-        i.rate.toFixed(2),
-        i.tax.toFixed(2),
-        i.amount.toFixed(2)
-      ]),
-      styles: { fontSize: isMobile ? 7 : 9, cellPadding: isMobile ? 2 : 4, overflow: 'linebreak' },
-      headStyles: { fillColor: [0, 0, 0], textColor: 255, fontStyle: 'bold', halign: 'center' },
-      columnStyles: {
-        0: { cellWidth: isMobile ? 50 : 70, halign: 'left' },
-        1: { cellWidth: isMobile ? 12 : 15, halign: 'center' },
-        2: { cellWidth: isMobile ? 20 : 25, halign: 'right' },
-        3: { cellWidth: isMobile ? 15 : 20, halign: 'center' },
-        4: { cellWidth: isMobile ? 20 : 30, halign: 'right' }
-      },
-      theme: 'grid'
-    });
 
-    yPos = doc.lastAutoTable.finalY + (isMobile ? 8 : 12);
+      // ================= PAGE 3 =================
+      doc.addPage();
+      doc.addImage('/pdf/terms-bank-clients.jpg', 'JPEG', 0, 0, pageWidth, pageHeight);
 
-    // Totals
-    const totalsX = pageWidth - rightMargin - (isMobile ? 50 : 60);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(fontSizeNormal);
-    doc.text('Subtotal:', totalsX, yPos);
-    doc.text(`₹ ${quotation.subtotal.toFixed(2)}`, pageWidth - rightMargin, yPos, { align: 'right' });
-    yPos += isMobile ? 5 : 6;
-    doc.text('Tax:', totalsX, yPos);
-    doc.text(`₹ ${quotation.tax.toFixed(2)}`, pageWidth - rightMargin, yPos, { align: 'right' });
-    yPos += isMobile ? 6 : 8;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(fontSizeTotals);
-    doc.text('Total:', totalsX, yPos);
-    doc.text(`₹ ${quotation.total.toFixed(2)}`, pageWidth - rightMargin, yPos, { align: 'right' });
+      // ================= PAGE 4 =================
+      doc.addPage();
+      doc.addImage('/pdf/company-profile.jpg', 'JPEG', 0, 0, pageWidth, pageHeight);
 
-    // Notes
-    if (quotation.notes) {
-      yPos += isMobile ? 10 : 15;
-      doc.setFont('helvetica','bold');
-      doc.setFontSize(fontSizeNormal);
-      doc.text('Notes:', leftMargin, yPos);
-      yPos += isMobile ? 4 : 5;
-      doc.setFont('helvetica','normal');
-      const noteLines = doc.splitTextToSize(quotation.notes, pageWidth - leftMargin - rightMargin);
-      noteLines.forEach(line => {
-        doc.text(line, leftMargin, yPos);
-        yPos += isMobile ? 4 : 5;
-      });
+      doc.save(`Quotation-${quotation.quotationNumber}.pdf`);
+      toast.success('PDF downloaded successfully');
+
+    } catch (error) {
+      console.error(error);
+      toast.error('PDF generation failed');
+    } finally {
+      setDownloading(false);
     }
+  };
 
-    doc.save(`Quotation-${quotation.quotationNumber}.pdf`);
-    toast.success('PDF downloaded successfully');
+  const downloadCSV = () => {
+    try {
+      // Prepare CSV headers
+      const headers = ['Product Name', 'Description', 'Parameters', 'Quantity', 'Rate (₹)', 'Tax (%)', 'Amount (₹)'];
 
-  } catch (error) {
-    console.error(error);
-    toast.error('PDF generation failed');
-  } finally {
-    setDownloading(false);
-  }
-};
+      // Prepare CSV rows
+      const rows = quotation.items.map(item => {
+        const parametersText = item.parameters?.length > 0
+          ? item.parameters
+            .map(p => `${p.title}: ${p.specs.map(s => `${s.label}=${s.value}`).join(', ')}`)
+            .join(' | ')
+          : '';
 
+        const amount = (
+          item.quantity * item.rate +
+          (item.quantity * item.rate * (item.tax || 0)) / 100
+        ).toFixed(2);
 
-  const printQuotation = () => window.print();
+        return [
+          `"${item.productName || ''}"`,
+          `"${item.description || ''}"`,
+          `"${parametersText}"`,
+          item.quantity,
+          item.rate.toFixed(2),
+          (item.tax || 0).toFixed(2),
+          amount
+        ].join(',');
+      });
+
+      // Add summary rows
+      const safeSubtotal = quotation.subtotal ?? quotation.items.reduce((s, i) => s + i.quantity * i.rate, 0);
+      rows.push('');
+      rows.push(`"Subtotal",,,,,,"₹${safeSubtotal.toFixed(2)}"`);
+      rows.push(`"Tax",,,,,,"₹${quotation.tax.toFixed(2)}"`);
+      rows.push(`"Total",,,,,,"₹${quotation.total.toFixed(2)}"`);
+
+      // Add customer info at the top
+      const customerInfo = [
+        `"Quotation Number","${quotation.quotationNumber}"`,
+        `"Date","${new Date(quotation.createdAt).toLocaleDateString()}"`,
+        `"Customer Name","${quotation.customerName}"`,
+        quotation.customerCompanyName && `"Company","${quotation.customerCompanyName}"`,
+        quotation.customerEmail && `"Email","${quotation.customerEmail}"`,
+        quotation.customerPhone && `"Phone","${quotation.customerPhone}"`,
+        quotation.customerAddress && `"Address","${quotation.customerAddress}"`,
+        quotation.shippingDetails && `"Shipping Details","${quotation.shippingDetails}"`,
+        '',
+        ''
+      ].filter(Boolean);
+
+      // Combine all parts
+      const csv = [
+        ...customerInfo,
+        headers.join(','),
+        ...rows
+      ].join('\n');
+
+      // Create and download file
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Quotation-${quotation.quotationNumber}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('CSV downloaded successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error('CSV generation failed');
+    }
+  };
 
   const getStatusBadge = (status) => {
-    const badges = { 
-      draft: 'bg-yellow-100 text-yellow-700', 
-      sent: 'bg-blue-100 text-blue-700', 
-      accepted: 'bg-green-100 text-green-700', 
-      rejected: 'bg-red-100 text-red-700' 
+    const badges = {
+      draft: 'bg-yellow-100 text-yellow-700',
+      sent: 'bg-blue-100 text-blue-700',
+      accepted: 'bg-green-100 text-green-700',
+      rejected: 'bg-red-100 text-red-700'
     };
     return badges[status] || 'bg-gray-100 text-gray-800';
   };
@@ -193,7 +463,6 @@ export default function ViewQuotationPage() {
 
   return (
     <div className="space-y-6 p-6 lg:p-8">
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <Link href="/dashboard/quotations" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 text-sm font-medium">
@@ -211,28 +480,28 @@ export default function ViewQuotationPage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button 
-            onClick={downloadPDF} 
-            disabled={downloading} 
+          <button
+            onClick={downloadPDF}
+            disabled={downloading}
             className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 font-medium text-sm"
           >
             {downloading ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
               <>
-                <Download className="w-4 h-4"/> 
+                <Download className="w-4 h-4" />
                 Download PDF
               </>
             )}
           </button>
-          <button 
-            onClick={printQuotation} 
+          <button
+            onClick={downloadCSV}
             className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium text-sm"
           >
-            <Printer className="w-4 h-4" /> Print
+            <FileSpreadsheet className="w-4 h-4" /> Download CSV
           </button>
-          <button 
-            onClick={handleDelete} 
+          <button
+            onClick={handleDelete}
             className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 text-red-600 rounded-xl hover:bg-red-50 transition-colors font-medium text-sm"
           >
             <Trash2 className="w-4 h-4" /> Delete
@@ -241,9 +510,7 @@ export default function ViewQuotationPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Customer Info */}
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-5">Customer Information</h2>
             <div className="space-y-4">
@@ -256,19 +523,19 @@ export default function ViewQuotationPage() {
               </div>
               {quotation.customerEmail && (
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Mail className="w-4 h-4 text-gray-500" /> 
+                  <Mail className="w-4 h-4 text-gray-500" />
                   <span className="text-sm">{quotation.customerEmail}</span>
                 </div>
               )}
               {quotation.customerPhone && (
                 <div className="flex items-center gap-2 text-gray-700">
-                  <Phone className="w-4 h-4 text-gray-500" /> 
+                  <Phone className="w-4 h-4 text-gray-500" />
                   <span className="text-sm">{quotation.customerPhone}</span>
                 </div>
               )}
               {quotation.customerAddress && (
                 <div className="flex items-start gap-2 text-gray-700">
-                  <MapPin className="w-4 h-4 text-gray-500 mt-0.5" /> 
+                  <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
                   <span className="text-sm">{quotation.customerAddress}</span>
                 </div>
               )}
@@ -281,7 +548,6 @@ export default function ViewQuotationPage() {
             </div>
           </div>
 
-          {/* Items */}
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Items</h2>
@@ -290,36 +556,63 @@ export default function ViewQuotationPage() {
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Product Name</th>
                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Parameters</th>
                     <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Quantity</th>
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Rate</th>
                     <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {quotation.items.map((item,i)=>(
+                  {quotation.items.map((item, i) => (
                     <tr key={i} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                        {item.productName || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
                         {item.description}
                         {item.tax > 0 && (
                           <span className="block text-xs text-gray-500 mt-1">Tax: {item.tax}%</span>
                         )}
                       </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {item.parameters?.length > 0 ? (
+                          <div className="space-y-1">
+                            {item.parameters.map((param, pi) => (
+                              <div key={pi} className="text-xs">
+                                <span className="font-semibold">{param.title}:</span>{" "}
+                                {param.specs.map(s => `${s.label}: ${s.value}`).join(", ")}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 text-center text-sm text-gray-900">{item.quantity}</td>
                       <td className="px-6 py-4 text-right text-sm text-gray-900">₹{item.rate.toFixed(2)}</td>
-                      <td className="px-6 py-4 text-right text-sm font-bold text-gray-900">₹{item.amount.toFixed(2)}</td>
+                      <td className="px-6 py-4 text-right text-sm font-bold text-gray-900">
+                        ₹{(
+                          item.quantity * item.rate +
+                          (item.quantity * item.rate * (item.tax || 0)) / 100
+                        ).toFixed(2)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            
-            {/* Totals */}
+
             <div className="p-6 bg-gray-50 border-t border-gray-200">
               <div className="max-w-xs ml-auto space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Subtotal:</span>
-                  <span className="font-semibold text-gray-900">₹{quotation.subtotal.toFixed(2)}</span>
+                  <span className="font-semibold text-gray-900">₹{(
+                    quotation.subtotal ??
+                    quotation.items.reduce((s, i) => s + i.quantity * i.rate, 0)
+                  ).toFixed(2)}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Tax:</span>
@@ -333,7 +626,6 @@ export default function ViewQuotationPage() {
             </div>
           </div>
 
-          {/* Notes */}
           {quotation.notes && (
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Notes</h2>
@@ -342,7 +634,6 @@ export default function ViewQuotationPage() {
           )}
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-gray-200 p-6">
             <h3 className="font-semibold text-gray-900 mb-5">Details</h3>

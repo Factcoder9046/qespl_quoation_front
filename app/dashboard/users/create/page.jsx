@@ -5,17 +5,19 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Save, Mail, Lock, User, Shield } from 'lucide-react';
+import { ArrowLeft, Save, Mail, Lock, User, Shield, Eye, EyeOff } from 'lucide-react';
 
 export default function CreateUserPage() {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'user'
+    role: 'user',
+    phone: ''
   });
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export default function CreateUserPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password.length < 6) {
       toast.error('Password must be at least 6 characters');
       return;
@@ -87,7 +89,7 @@ export default function CreateUserPage() {
                 value={formData.name}
                 onChange={handleInputChange}
                 className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none bg-white"
-                placeholder="John Doe"
+                placeholder="Name"
                 required
               />
             </div>
@@ -106,32 +108,86 @@ export default function CreateUserPage() {
                 value={formData.email}
                 onChange={handleInputChange}
                 className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none bg-white"
-                placeholder="john@example.com"
+                placeholder="Email"
                 required
               />
             </div>
           </div>
 
+
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Phone Number
+            </label>
+            <div className="relative">
+              <svg
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                />
+              </svg>
+
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none bg-white"
+                placeholder="Phone Number"
+              />
+            </div>
+          </div>
+
+          {/* Password */}
           {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Password *
             </label>
+
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none bg-white"
+                className="w-full pl-11 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none bg-white"
                 placeholder="••••••••"
                 required
                 minLength={6}
               />
+
+              {/* Eye Icon */}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-800"
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
             </div>
-            <p className="text-xs text-gray-500 mt-2">Minimum 6 characters</p>
+
+            <p className="text-xs text-gray-500 mt-2">
+              Minimum 6 characters
+            </p>
           </div>
+
+
 
           {/* Role */}
           <div>
@@ -152,8 +208,8 @@ export default function CreateUserPage() {
               </select>
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {formData.role === 'admin' 
-                ? '⚠️ Admin users have full access to all features' 
+              {formData.role === 'admin'
+                ? '⚠️ Admin users have full access to all features'
                 : 'Regular users can manage their own quotations'
               }
             </p>
@@ -194,7 +250,7 @@ export default function CreateUserPage() {
               </>
             )}
           </button>
-          
+
           <Link
             href="/dashboard/users"
             className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
