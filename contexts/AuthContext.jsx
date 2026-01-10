@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { getAvatarUrl } from '../lib/avatar.js';
 
 const AuthContext = createContext();
 
@@ -17,6 +18,15 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
+  const normalizeUser = (userData) => {
+    if (!userData) return null;
+
+    return {
+      ...userData,
+      avatar: getAvatarUrl(userData.avatar),
+    };
+  };
+
   const checkAuth = async () => {
     try {
       if (typeof window !== 'undefined') {
@@ -26,8 +36,14 @@ export function AuthProvider({ children }) {
         if (token && savedUser) {
           try {
             const { data } = await authAPI.getMe();
-            setUser(data.user);
-            localStorage.setItem('user', JSON.stringify(data.user));
+
+            const normalizedUser = normalizeUser(data.user);
+
+            setUser(normalizedUser);
+            localStorage.setItem(
+              'user',
+              JSON.stringify(normalizedUser)
+            );
           } catch (error) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
@@ -47,16 +63,21 @@ export function AuthProvider({ children }) {
     try {
       const { data } = await authAPI.login(credentials);
 
+      const normalizedUser = normalizeUser(data.user);
+
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem(
+          'user',
+          JSON.stringify(normalizedUser)
+        );
       }
 
-      setUser(data.user);
+      setUser(normalizedUser);
       toast.success('Login successful! 🎉');
 
       // Admin company check
-      if (data.user.role === 'admin') {
+      if (normalizedUser.role === 'admin') {
         try {
           const res = await fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/api/company/check`,
@@ -107,12 +128,17 @@ export function AuthProvider({ children }) {
     router.push('/login');
   };
 
-  /* ================= UPDATE USER (🔥 NEW) ================= */
+  /* ================= UPDATE USER ================= */
   const updateUser = (updatedUser) => {
-    setUser(updatedUser);
+    const normalizedUser = normalizeUser(updatedUser);
+
+    setUser(normalizedUser);
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      localStorage.setItem(
+        'user',
+        JSON.stringify(normalizedUser)
+      );
     }
   };
 
@@ -124,7 +150,7 @@ export function AuthProvider({ children }) {
         login,
         logout,
         checkAuth,
-        updateUser, // 👈 IMPORTANT
+        updateUser,
       }}
     >
       {children}

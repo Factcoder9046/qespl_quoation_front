@@ -33,17 +33,7 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  // Get the proper avatar URL to display
-  const getAvatarUrl = () => {
-    if (avatarPreview) return avatarPreview;
-    if (user.avatar) {
-      if (user.avatar.startsWith('http')) {
-        return user.avatar;
-      }
-      return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${user.avatar}`;
-    }
-    return '/default-avatar.png';
-  };
+
 
   // Avatar upload handler
   const handleAvatarUpload = async (file) => {
@@ -142,7 +132,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-cream-50 to-gray-100 p-4 sm:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        
+
         {/* Header with Glassmorphism */}
         <div className="backdrop-blur-xl bg-white/40 border border-white/50 rounded-2xl p-6 shadow-xl">
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text text-transparent">
@@ -156,20 +146,18 @@ export default function ProfilePage() {
           {/* Decorative gradient orbs */}
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-gray-200/30 to-transparent rounded-full blur-3xl -z-10" />
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-cream-200/30 to-transparent rounded-full blur-3xl -z-10" />
-          
+
           <div className="flex justify-center items-center relative z-10">
             {/* Avatar with advanced styling */}
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
               <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden ring-4 ring-white/50 shadow-xl">
                 <img
-                  src={getAvatarUrl()}
+                  src={avatarPreview || user.avatar}
                   alt="Avatar"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                  onError={(e) => {
-                    e.target.src = '/default-avatar.png';
-                  }}
                 />
+
                 {loading && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                     <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin" />
@@ -195,18 +183,18 @@ export default function ProfilePage() {
           <ProfileCard icon={Mail} label="Email Address" value={user.email} gradient="from-blue-50/80 to-cyan-50/80" />
           <ProfileCard icon={Shield} label="Account Role" value={user.role} gradient="from-purple-50/80 to-pink-50/80" />
           <ProfileCard icon={Phone} label="Phone Number" value={user.phone || 'Not added'} gradient="from-green-50/80 to-emerald-50/80" />
-          <ProfileCard 
-            icon={Calendar} 
-            label="Member Since" 
-            value={user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'} 
-            gradient="from-orange-50/80 to-amber-50/80" 
+          <ProfileCard
+            icon={Calendar}
+            label="Member Since"
+            value={user.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}
+            gradient="from-orange-50/80 to-amber-50/80"
           />
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <button 
-            onClick={() => setOpen(true)} 
+          <button
+            onClick={() => setOpen(true)}
             className="group relative flex-1 px-6 py-4 rounded-2xl bg-gradient-to-r from-gray-900 to-gray-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-900 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -273,17 +261,17 @@ function GlassModal({ title, children, onClose }) {
       <div className="relative backdrop-blur-2xl bg-white/80 border border-white/60 rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl animate-in zoom-in duration-200">
         {/* Decorative gradient */}
         <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-gray-200/40 to-transparent rounded-full blur-2xl -z-10" />
-        
+
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{title}</h2>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 rounded-xl hover:bg-gray-200/50 transition-colors"
           >
             <X className="w-5 h-5 text-gray-600" />
           </button>
         </div>
-        
+
         <div className="space-y-5">
           {children}
         </div>
@@ -312,15 +300,15 @@ function GlassInput({ label, value, onChange, type = 'text', placeholder }) {
 function ModalActions({ onCancel, onConfirm, loading }) {
   return (
     <div className="flex gap-3 mt-8">
-      <button 
-        onClick={onCancel} 
+      <button
+        onClick={onCancel}
         className="flex-1 px-5 py-3 rounded-xl backdrop-blur-xl bg-white/60 border border-gray-300/50 text-gray-700 font-medium hover:bg-white/80 transition-all duration-200"
       >
         Cancel
       </button>
-      <button 
-        onClick={onConfirm} 
-        disabled={loading} 
+      <button
+        onClick={onConfirm}
+        disabled={loading}
         className="flex-1 px-5 py-3 rounded-xl bg-gradient-to-r from-gray-900 to-gray-700 text-white font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
       >
         {loading ? (

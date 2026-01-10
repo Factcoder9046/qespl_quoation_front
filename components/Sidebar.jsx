@@ -26,6 +26,7 @@ export default function Sidebar() {
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  
 
   // Auto-collapse on mobile
   useEffect(() => {
