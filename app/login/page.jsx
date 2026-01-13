@@ -55,17 +55,17 @@ export default function LoginPage() {
           </div>
 
           {/* Test Credentials */}
-<div className="mb-6 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
-  <h2 className="text-sm font-semibold text-gray-900 mb-1">
-    Test Login Credentials
-  </h2>
-  <p className="text-sm text-gray-600">
-    Email: <span className="font-medium text-gray-900">test@gmail.com</span>
-  </p>
-  <p className="text-sm text-gray-600">
-    Password: <span className="font-medium text-gray-900">Test@123</span>
-  </p>
-</div>
+          <div className="mb-6 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
+            <h2 className="text-sm font-semibold text-gray-900 mb-1">
+              Test Login Credentials
+            </h2>
+            <p className="text-sm text-gray-600">
+              Email: <span className="font-medium text-gray-900">test@gmail.com</span>
+            </p>
+            <p className="text-sm text-gray-600">
+              Password: <span className="font-medium text-gray-900">123456</span>
+            </p>
+          </div>
 
 
           <form onSubmit={handleSubmit} className="space-y-5">
