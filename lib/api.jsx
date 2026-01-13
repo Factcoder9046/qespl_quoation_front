@@ -62,7 +62,11 @@ export const userAPI = {
   getOne: (id) => api.get(`/users/${id}`),
   create: (data) => api.post('/users', data),
   update: (id, data) => api.put(`/users/${id}`, data),
-  delete: (id) => api.delete(`/users/${id}`)
+  delete: (id) => api.delete(`/users/${id}`),
+
+  
+  updatePermissions: (id, permissions) =>
+    api.put(`/users/${id}/permissions`, { permissions })
 };
 
 /* ================= QUOTATION APIs ================= */

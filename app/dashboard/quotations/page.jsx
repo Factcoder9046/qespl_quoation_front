@@ -4,6 +4,7 @@ import { quotationAPI } from '@/lib/api';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Plus,
   Search,
@@ -25,19 +26,22 @@ export default function QuotationsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const limit = 10;
   const router = useRouter();
-  
-  useEffect(() => {
-  fetchQuotations();
-}, []);
+
+  const { hasPermission } = useAuth();
+
 
   useEffect(() => {
-  const timer = setTimeout(() => {
-    setDebouncedSearch(searchTerm);
-    setCurrentPage(1);
-  }, 400);
+    fetchQuotations();
+  }, []);
 
-  return () => clearTimeout(timer);
-}, [searchTerm]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
 
   const fetchQuotations = async () => {
@@ -51,21 +55,21 @@ export default function QuotationsPage() {
     }
   };
 
- const filteredQuotations = useMemo(() => {
-  if (!debouncedSearch && statusFilter === 'all') return quotations;
+  const filteredQuotations = useMemo(() => {
+    if (!debouncedSearch && statusFilter === 'all') return quotations;
 
-  const term = debouncedSearch.toLowerCase();
+    const term = debouncedSearch.toLowerCase();
 
-  return quotations
-    .filter(q =>
-      (q.quotationNumber || '').toLowerCase().includes(term) ||
-      (q.customerName || '').toLowerCase().includes(term) ||
-      (q.customerEmail || '').toLowerCase().includes(term)
-    )
-    .filter(q =>
-      statusFilter === 'all' ? true : q.status === statusFilter
-    );
-}, [quotations, debouncedSearch, statusFilter]);
+    return quotations
+      .filter(q =>
+        (q.quotationNumber || '').toLowerCase().includes(term) ||
+        (q.customerName || '').toLowerCase().includes(term) ||
+        (q.customerEmail || '').toLowerCase().includes(term)
+      )
+      .filter(q =>
+        statusFilter === 'all' ? true : q.status === statusFilter
+      );
+  }, [quotations, debouncedSearch, statusFilter]);
 
 
   const handleDelete = async (id) => {
@@ -96,15 +100,29 @@ export default function QuotationsPage() {
     currentPage * limit
   );
 
- if (loading) {
-  return (
-    <div className="p-6 space-y-3 animate-pulse">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="h-6 bg-gray-200 rounded" />
-      ))}
-    </div>
-  );
-}
+  if (loading) {
+    return (
+      <div className="p-6 space-y-3 animate-pulse">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-6 bg-gray-200 rounded" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!hasPermission('quotation', 'read')) {
+    return (
+      <div className="p-10 text-center">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Access Denied
+        </h2>
+        <p className="text-gray-600 mt-2">
+          You don’t have permission to view quotations.
+        </p>
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-6 p-6 lg:p-8">
@@ -136,13 +154,15 @@ export default function QuotationsPage() {
 
         <div className="flex items-center">
 
-          <Link
-            href="/dashboard/quotations/create"
-            className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium text-sm"
-          >
-            <Plus className="w-4 h-4" />
-            Add Quotation
-          </Link>
+          {hasPermission('quotation', 'create') && (
+            <Link
+              href="/dashboard/quotations/create"
+              className="inline-flex items-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium text-sm"
+            >
+              <Plus className="w-4 h-4" />
+              Add Quotation
+            </Link>
+          )}
         </div>
       </div>
 
@@ -221,28 +241,39 @@ export default function QuotationsPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => router.push(`/dashboard/quotations/${q._id}`)}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="View"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => router.push(`/dashboard/quotations/${q._id}/edit`)}
-                            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(q._id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+
+                          {hasPermission('quotation', 'read') && (
+                            <button
+                              onClick={() => router.push(`/dashboard/quotations/${q._id}`)}
+                              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                              title="View"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {hasPermission('quotation', 'update') && (
+                            <button
+                              onClick={() => router.push(`/dashboard/quotations/${q._id}/edit`)}
+                              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                              title="Edit"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {hasPermission('quotation', 'delete') && (
+                            <button
+                              onClick={() => handleDelete(q._id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+
                         </div>
+
                       </td>
                     </tr>
                   ))}
@@ -279,27 +310,35 @@ export default function QuotationsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => router.push(`/dashboard/quotations/${q._id}`)}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View
-                    </button>
-                    <button
-                      onClick={() => router.push(`/dashboard/quotations/${q._id}/edit`)}
-                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <Pencil className="w-4 h-4" />
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(q._id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    {hasPermission('quotation', 'read') && (
+                      <button
+                        onClick={() => router.push(`/dashboard/quotations/${q._id}`)}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View
+                      </button>
+                    )}
+
+                    {hasPermission('quotation', 'update') && (
+                      <button
+                        onClick={() => router.push(`/dashboard/quotations/${q._id}/edit`)}
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Edit
+                      </button>
+                    )}
+
+                    {hasPermission('quotation', 'delete') && (
+                      <button
+                        onClick={() => handleDelete(q._id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+
                   </div>
                 </div>
               ))}

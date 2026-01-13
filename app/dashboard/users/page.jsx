@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  Plus, 
-  Search, 
-  Users as UsersIcon, 
-  Pencil, 
+import PermissionsModal from './PermissionsModal';
+import {
+  Plus,
+  Search,
+  Users as UsersIcon,
+  Pencil,
   Trash2,
   Crown,
   User,
@@ -23,6 +24,7 @@ export default function UsersPage() {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
   const router = useRouter();
   const { user: currentUser } = useAuth();
 
@@ -52,7 +54,7 @@ export default function UsersPage() {
 
   const filterUsers = () => {
     if (searchTerm) {
-      const filtered = users.filter(u => 
+      const filtered = users.filter(u =>
         u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -63,62 +65,62 @@ export default function UsersPage() {
   };
 
   const handleDelete = (id) => {
-  toast.custom(
-    (t) => (
-      <div
-        className={`
+    toast.custom(
+      (t) => (
+        <div
+          className={`
           ${t.visible ? 'animate-enter' : 'animate-leave'}
           backdrop-blur-xl bg-white/70
           shadow-2xl border border-white/30
           rounded-2xl p-5 w-[340px]
         `}
-      >
-        <div className="flex items-start gap-4">
-          <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center">
-            <Trash2 className="w-5 h-5 text-red-600" />
-          </div>
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center">
+              <Trash2 className="w-5 h-5 text-red-600" />
+            </div>
 
-          <div className="flex-1">
-            <h4 className="text-sm font-semibold text-gray-900">
-              Delete user?
-            </h4>
-            <p className="text-xs text-gray-600 mt-1">
-              This action cannot be undone.
-            </p>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-gray-900">
+                Delete user?
+              </h4>
+              <p className="text-xs text-gray-600 mt-1">
+                This action cannot be undone.
+              </p>
 
-            <div className="flex justify-end gap-2 mt-4">
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                className="px-3 py-1.5 text-xs rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
-              >
-                Cancel
-              </button>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={() => toast.dismiss(t.id)}
+                  className="px-3 py-1.5 text-xs rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
 
-              <button
-                onClick={async () => {
-                  toast.dismiss(t.id);
-                  try {
-                    await userAPI.delete(id);
-                    toast.success('User deleted successfully');
-                    fetchUsers();
-                  } catch (error) {
-                    toast.error(
-                      error.response?.data?.message || 'Failed to delete user'
-                    );
-                  }
-                }}
-                className="px-3 py-1.5 text-xs rounded-lg bg-red-600 text-white hover:bg-red-700"
-              >
-                Delete
-              </button>
+                <button
+                  onClick={async () => {
+                    toast.dismiss(t.id);
+                    try {
+                      await userAPI.delete(id);
+                      toast.success('User deleted successfully');
+                      fetchUsers();
+                    } catch (error) {
+                      toast.error(
+                        error.response?.data?.message || 'Failed to delete user'
+                      );
+                    }
+                  }}
+                  className="px-3 py-1.5 text-xs rounded-lg bg-red-600 text-white hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    ),
-    { position: 'top-center' }
-  );
-};
+      ),
+      { position: 'top-center' }
+    );
+  };
 
 
   const toggleStatus = async (id, isActive) => {
@@ -241,8 +243,8 @@ export default function UsersPage() {
                   <h3 className="font-semibold text-gray-900">{user.name}</h3>
                   <span className={`
                     text-xs px-2 py-1 rounded-lg mt-1 inline-block
-                    ${user.role === 'admin' 
-                      ? 'bg-purple-100 text-purple-700' 
+                    ${user.role === 'admin'
+                      ? 'bg-purple-100 text-purple-700'
                       : 'bg-blue-100 text-blue-700'
                     }
                   `}>
@@ -250,11 +252,11 @@ export default function UsersPage() {
                   </span>
                 </div>
               </div>
-              
+
               <span className={`
                 px-2.5 py-1 text-xs font-semibold rounded-lg
-                ${user.isActive 
-                  ? 'bg-green-100 text-green-700' 
+                ${user.isActive
+                  ? 'bg-green-100 text-green-700'
                   : 'bg-red-100 text-red-700'
                 }
               `}>
@@ -289,7 +291,7 @@ export default function UsersPage() {
               >
                 {user.isActive ? 'Deactivate' : 'Activate'}
               </button>
-              
+
               <Link
                 href={`/dashboard/users/${user._id}`}
                 className="p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
@@ -312,6 +314,15 @@ export default function UsersPage() {
               >
                 <Trash2 className="w-4 h-4" />
               </button>
+
+              <button
+                onClick={() => setSelectedUser(user)}
+                className="p-2 rounded-xl text-[#007d58] hover:bg-green-50"
+                title="Permissions"
+              >
+                <Shield className="w-4 h-4" />
+              </button>
+
             </div>
           </div>
         ))}
@@ -326,6 +337,14 @@ export default function UsersPage() {
           <p className="text-gray-600">Try adjusting your search criteria</p>
         </div>
       )}
+      {selectedUser && (
+        <PermissionsModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+          onUpdated={fetchUsers}
+        />
+      )}
+
     </div>
   );
 }

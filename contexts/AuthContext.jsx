@@ -6,6 +6,23 @@ import { authAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { getAvatarUrl } from '../lib/avatar.js';
 
+
+const DEFAULT_PERMISSIONS = {
+  quotation: {
+    create: false,
+    read: false,
+    update: false,
+    delete: false,
+  },
+  user: {
+    create: false,
+    read: false,
+    update: false,
+    delete: false,
+  },
+};
+
+
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
@@ -19,13 +36,26 @@ export function AuthProvider({ children }) {
   }, []);
 
   const normalizeUser = (userData) => {
-    if (!userData) return null;
+  if (!userData) return null;
 
-    return {
-      ...userData,
-      avatar: getAvatarUrl(userData.avatar),
-    };
+  return {
+    ...userData,
+    avatar: getAvatarUrl(userData.avatar),
+    permissions: {
+      ...DEFAULT_PERMISSIONS,
+      ...(userData.permissions || {}),
+      quotation: {
+        ...DEFAULT_PERMISSIONS.quotation,
+        ...(userData.permissions?.quotation || {}),
+      },
+      user: {
+        ...DEFAULT_PERMISSIONS.user,
+        ...(userData.permissions?.user || {}),
+      },
+    },
   };
+};
+
 
   const checkAuth = async () => {
     try {
@@ -142,6 +172,16 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const hasPermission = (module, action) => {
+  if (!user) return false;
+
+  // Admin = full access
+  if (user.role === 'admin') return true;
+
+  return Boolean(user.permissions?.[module]?.[action]);
+};
+
+
   return (
     <AuthContext.Provider
       value={{
@@ -150,7 +190,8 @@ export function AuthProvider({ children }) {
         login,
         logout,
         checkAuth,
-        updateUser,
+        updateUser, 
+        hasPermission,
       }}
     >
       {children}

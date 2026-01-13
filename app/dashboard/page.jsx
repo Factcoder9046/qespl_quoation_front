@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 
 export default function DashboardPage() {
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
     const [searchTerm, setSearchTerm] = useState('');
     const [stats, setStats] = useState({
         totalQuotations: 0,
@@ -154,13 +154,14 @@ export default function DashboardPage() {
                     />
                 </div>
 
-                <Link
+              {hasPermission('quotation', 'create') && (  <Link
                     href="/dashboard/quotations/create"
                     className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium shadow-sm"
                 >
                     <Plus className="w-5 h-5" />
                     New Quotation
                 </Link>
+            )}
             </div>
 
             {/* Dashboard Header */}

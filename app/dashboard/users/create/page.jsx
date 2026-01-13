@@ -148,7 +148,6 @@ export default function CreateUserPage() {
           </div>
 
           {/* Password */}
-          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Password *

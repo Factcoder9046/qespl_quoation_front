@@ -52,6 +52,43 @@ export default function ViewQuotationPage() {
       const leftMargin = 30;
       const rightMargin = 20;
 
+      /* ================= HELPER ================= */
+      const getItemDescription = (item) => {
+        let text = '';
+
+        // ITEM NAME
+        text += `${item.productName}\n`;
+
+        // MAKE
+        if (item.description) {
+          text += `Make: ${item.description}\n`;
+        }
+
+        // PARAMETERS
+        if (item.parameters?.length) {
+          text += `\nParameters:\n`;
+
+          item.parameters.forEach(param => {
+            text += `• ${param.title}\n`;
+
+            param.specs.forEach(s => {
+              text += `   ${s.label} : ${s.value}\n`;
+            });
+          });
+        }
+
+        // GENERAL SPECIFICATIONS
+        if (item.generalSpecifications?.length) {
+          text += `\nGeneral Specification:\n`;
+          item.generalSpecifications.forEach(gs => {
+            text += `• ${gs.text}\n`;
+          });
+        }
+
+        return text.trim();
+      };
+
+
       // ================= PAGE 1 =================
       doc.addImage('/letterhead.png.jpeg', 'JPEG', 0, 0, pageWidth, pageHeight);
 
@@ -232,7 +269,6 @@ Assuring you of our best services and looking forward to build a long-term busin
 
       // ================= PAGE 2 =================
       doc.addPage();
-
       doc.setFontSize(22);
       doc.setFont('helvetica', 'bold');
       doc.text('Quotation', pageWidth / 2, 40, { align: 'center' });
@@ -240,13 +276,12 @@ Assuring you of our best services and looking forward to build a long-term busin
       let startY = 50;
 
       quotation.items.forEach((item, index) => {
-
         doc.autoTable({
           startY,
-          head: [['S.no', 'Items', 'Rate', 'Qty', 'Amount']],
+          head: [['S.No', 'Items', 'Rate', 'Qty', 'Amount']],
           body: [[
             index + 1,
-            '', // 👈 Items column manual draw
+            getItemDescription(item),
             `₹${item.rate}/-`,
             item.quantity,
             `₹${item.rate * item.quantity}/-`
@@ -260,95 +295,23 @@ Assuring you of our best services and looking forward to build a long-term busin
           },
 
           columnStyles: {
-            0: { cellWidth: 17 },
+            0: { cellWidth: 15 },
             1: { cellWidth: 110 },
             2: { cellWidth: 22 },
-            3: { cellWidth: 18 },
+            3: { cellWidth: 15 },
             4: { cellWidth: 25 }
           },
 
           styles: {
             fontSize: 9,
-            cellPadding: 3,
-            valign: 'top'
-          },
-
-          didDrawCell: function (data) {
-            if (data.section === 'body' && data.column.index === 1) {
-
-              let x = data.cell.x + 2;
-              let y = data.cell.y + 4;
-
-              /* ================= PRODUCT NAME ================= */
-              doc.setFont('helvetica', 'bold');
-              doc.text(item.productName, x, y);
-              y += 4;
-
-              /* ================= MAKE ================= */
-              if (item.description) {
-                doc.setFont('helvetica', 'normal');
-                doc.text(`Make: ${item.description}`, x, y);
-                y += 6;
-              }
-              doc.text("Parameters:", x, y);
-              y += 4;
-              /* ================= PARAMETERS + SPECIFICATIONS ================= */
-              if (item.parameters?.length) {
-
-                item.parameters.forEach(param => {
-
-                  // 🔹 Parameter title (Rain Fall, Wind Speed...)
-                  doc.setFont('helvetica', 'bold');
-                  doc.setTextColor(200, 0, 0);
-                  doc.text(param.title, x, y);
-                  doc.setTextColor(0);
-                  y += 2;
-
-                  // 🔹 Specification table under parameter
-                  doc.autoTable({
-                    startY: y,
-                    margin: { left: x },
-                    tableWidth: 105,
-                    body: param.specs.map(s => [s.label, s.value]),
-                    theme: 'grid',
-                    styles: {
-                      fontSize: 7,
-                      cellPadding: 1
-                    },
-                    columnStyles: {
-                      0: { cellWidth: 65 },
-                      1: { cellWidth: 40 }
-                    }
-                  });
-
-                  y = doc.lastAutoTable.finalY + 3;
-                });
-              }
-
-              /* ================= GENERAL SPEC ================= */
-              if (item.generalSpecifications?.length) {
-                doc.setFont('helvetica', 'bold');
-                doc.text('General Specification:', x, y);
-                y += 3;
-
-                doc.setFont('helvetica', 'normal');
-                item.generalSpecifications.forEach(gs => {
-                  if (gs?.text) {
-                    doc.text(`• ${gs.text}`, x + 2, y);
-                    y += 3;
-                  }
-                });
-
-              }
-            }
+            valign: 'top',
+            cellPadding: 3
           }
         });
 
         startY = doc.lastAutoTable.finalY + 6;
       });
-
-
-
+      
       // ================= PAGE 3 =================
       doc.addPage();
       doc.addImage('/pdf/terms-bank-clients.jpg', 'JPEG', 0, 0, pageWidth, pageHeight);
