@@ -1,14 +1,15 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { quotationAPI, companyAPI, productAPI, customerAPI } from '@/lib/api';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, ArrowLeft, Save, Building2 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function EditQuotationPage() {
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,11 +35,12 @@ export default function EditQuotationPage() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
+    if (!id) return;
     fetchCompanyDetails();
     fetchProducts();
     fetchCustomers();
     fetchQuotation();
-  }, [params.id]);
+  }, [id]);
 
   const fetchCompanyDetails = async () => {
     try {
@@ -75,7 +77,7 @@ export default function EditQuotationPage() {
 
   const fetchQuotation = async () => {
     try {
-      const { data } = await quotationAPI.getOne(params.id);
+      const { data } = await quotationAPI.getOne(id);
       const q = data.quotation;
 
       setFormData({
@@ -206,7 +208,7 @@ export default function EditQuotationPage() {
     setSaving(true);
     try {
       const taxAmount = calculateTotalTax();
-      await quotationAPI.update(params.id, {
+      await quotationAPI.update(id, {
         ...formData,
         items,
         tax: taxAmount,
@@ -217,7 +219,7 @@ export default function EditQuotationPage() {
         companyLogo: companyDetails?.logo
       });
       toast.success('Quotation updated successfully!');
-      router.push(`/dashboard/quotations/${params.id}`);
+      router.push(`/dashboard/quotations`);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update quotation');
     } finally {
@@ -235,7 +237,7 @@ export default function EditQuotationPage() {
     <div className="space-y-6 p-6 lg:p-8">
       {/* Header */}
       <div>
-        <Link href={`/dashboard/quotations/${params.id}`} className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 text-sm font-medium">
+        <Link href={`/dashboard/quotations`} className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 text-sm font-medium">
           <ArrowLeft className="w-4 h-4" /> Back to Quotation
         </Link>
         <h1 className="text-3xl font-bold text-gray-900">Edit Quotation</h1>
@@ -305,7 +307,15 @@ export default function EditQuotationPage() {
               className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent outline-none bg-white"
             >
               <option value="">-- Select a customer or enter manually --</option>
-              {customers.map(c => <option key={c._id} value={c._id}>{c.name} {c.companyName && `(${c.companyName})`} - {c.email}</option>)}
+              {customers.map((c, index) => (
+                <option
+                  key={c._id || index} // fallback to index if _id is missing
+                  value={c._id}
+                >
+                  {c.name} {c.companyName && `(${c.companyName})`} - {c.email}
+                </option>
+              ))}
+
             </select>
           </div>
 
@@ -430,7 +440,7 @@ export default function EditQuotationPage() {
         {/* Actions */}
         <div className="flex items-center gap-4 justify-end">
           <Link
-            href={`/dashboard/quotations/${params.id}`}
+            href={`/dashboard/quotations/${id}`}
             className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
           >
             Cancel

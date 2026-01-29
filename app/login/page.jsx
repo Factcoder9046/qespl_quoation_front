@@ -15,7 +15,6 @@ export default function LoginPage() {
     if (user) router.push('/dashboard');
   }, [user, router]);
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.email || !formData.password) return;
@@ -53,20 +52,6 @@ export default function LoginPage() {
               Sign in to manage your quotations
             </p>
           </div>
-
-          {/* Test Credentials */}
-          <div className="mb-6 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
-            <h2 className="text-sm font-semibold text-gray-900 mb-1">
-              Test Login Credentials
-            </h2>
-            <p className="text-sm text-gray-600">
-              Email: <span className="font-medium text-gray-900">test@gmail.com</span>
-            </p>
-            <p className="text-sm text-gray-600">
-              Password: <span className="font-medium text-gray-900">123456</span>
-            </p>
-          </div>
-
 
           <form onSubmit={handleSubmit} className="space-y-5">
 

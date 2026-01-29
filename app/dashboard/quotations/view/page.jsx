@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { quotationAPI } from '@/lib/api';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Calendar, Mail, Phone, MapPin, Download, Trash2, FileSpreadsheet } from 'lucide-react';
@@ -11,15 +11,15 @@ export default function ViewQuotationPage() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
 
   useEffect(() => {
     fetchQuotation();
-  }, [params.id]);
-
+  }, [id]);
   const fetchQuotation = async () => {
     try {
-      const { data } = await quotationAPI.getOne(params.id);
+      const { data } = await quotationAPI.getOne(id);
       setQuotation(data.quotation);
     } catch (error) {
       toast.error('Failed to load quotation');
@@ -32,7 +32,7 @@ export default function ViewQuotationPage() {
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this quotation?')) return;
     try {
-      await quotationAPI.delete(params.id);
+      await quotationAPI.delete(id);
       toast.success('Quotation deleted successfully');
       router.push('/dashboard/quotations');
     } catch {
@@ -85,12 +85,20 @@ export default function ViewQuotationPage() {
           });
         }
 
+
+        // NOTES 
+        if (quotation.notes) {
+          text += `\nNotes:\n`;
+          quotation.notes.split('\n').forEach(n => {
+            text += `• ${n}\n`;
+          });
+        }
         return text.trim();
       };
 
 
       // ================= PAGE 1 =================
-      doc.addImage('/letterhead.png.jpeg', 'JPEG', 0, 0, pageWidth, pageHeight);
+      doc.addImage('/letterhead-image.jpeg', 'JPEG', 0, 0, pageWidth, pageHeight);
 
       let y = 65;
 
@@ -264,61 +272,147 @@ Assuring you of our best services and looking forward to build a long-term busin
       y += lh;
 
       // Phone
-      doc.text(quotation.createdBy?.phone || '+91-8755166199', leftMargin, y);
+      doc.text(
+        `${String(quotation.createdBy.phone)}`,
+        leftMargin,
+        y
+      );
+
 
 
       // ================= PAGE 2 =================
       doc.addPage();
-      doc.setFontSize(22);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Quotation', pageWidth / 2, 40, { align: 'center' });
 
-      let startY = 50;
+      // Title
+      doc.setFont('times', 'normal');
+      doc.setFontSize(20);
+      doc.text('QUOTATION', pageWidth / 2, 30, { align: 'center' });
+
+      let startY = 45;
 
       quotation.items.forEach((item, index) => {
         doc.autoTable({
           startY,
-          head: [['S.No', 'Items', 'Rate', 'Qty', 'Amount']],
+
+          head: [[
+            'S No.',
+            'Item Description',
+            'Rate',
+            'Qty',
+            'Amount'
+          ]],
+
           body: [[
             index + 1,
             getItemDescription(item),
-            `₹${item.rate}/-`,
+            `${item.rate}/-`,
             item.quantity,
-            `₹${item.rate * item.quantity}/-`
+            `${item.rate * item.quantity}/-`
           ]],
+
           theme: 'grid',
 
           headStyles: {
-            fillColor: [22, 160, 133],
+            fillColor: [0, 82, 155],
             textColor: 255,
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            fontSize: 10.5,
+            halign: 'center',
+            valign: 'middle',
+            minCellHeight: 14,
+            overflow: 'hidden'
+          }, 
+
+          styles: {
+            fontSize: 10.5,        //bigger text
+            cellPadding: 7,        //more space
+            valign: 'top',
+            lineHeight: 1.6,       //readability
+            textColor: 30
+          },
+
+          bodyStyles: {
+            minCellHeight: 12
           },
 
           columnStyles: {
-            0: { cellWidth: 15 },
-            1: { cellWidth: 110 },
-            2: { cellWidth: 22 },
-            3: { cellWidth: 15 },
-            4: { cellWidth: 25 }
+            0: { cellWidth: 23, halign: 'center' },
+            1: { cellWidth: 90 },      
+            2: { cellWidth: 28, halign: 'center' },
+            3: { cellWidth: 21, halign: 'center' },
+            4: { cellWidth: 30, halign: 'right' }
           },
 
-          styles: {
-            fontSize: 9,
-            valign: 'top',
-            cellPadding: 3
+          didParseCell: function (data) {
+            if (data.section === 'body' && data.column.index === 1) {
+              data.cell.styles.cellPadding = {
+                top: 4,
+                right: 1,
+                bottom: 4,
+                left: 1
+              };
+            }
           }
         });
 
-        startY = doc.lastAutoTable.finalY + 6;
+        startY = doc.lastAutoTable.finalY + 1;
       });
-      
+
+      // ================= TOTALS TABLE =================
+      doc.autoTable({
+        startY,
+
+        body: [
+          ['Installation Charges', `${quotation.installationCharges || 0}/-`],
+          ['Freight Charges', `${quotation.freightCharges || 0}/-`],
+          ['Sub Total', `${quotation.subtotal.toFixed(2)}/-`],
+          ['GST %', `${quotation.tax.toFixed(2)}/-`],
+          [
+            {
+              content: 'Grand Total',
+              styles: {
+                fillColor: [0, 82, 155],
+                textColor: 255,
+                fontStyle: 'bold',
+                cellPadding: 2
+              }
+            },
+            {
+              content: `${quotation.total.toFixed(2)}/-`,
+              styles: {
+                fillColor: [0, 82, 155],
+                textColor: 255,
+                fontStyle: 'bold',
+                halign: 'center',
+                cellPadding: 2
+              }
+            }
+          ]
+        ],
+
+        theme: 'grid',
+
+        styles: {
+          fontSize: 10,
+          cellPadding: 2,
+          textColor: 0
+        },
+
+        columnStyles: {
+          0: { cellWidth: 113 },
+          1: { cellWidth: 76.2, halign: 'center' }
+        }
+      });
+
+
+
       // ================= PAGE 3 =================
       doc.addPage();
-      doc.addImage('/pdf/terms-bank-clients.jpg', 'JPEG', 0, 0, pageWidth, pageHeight);
+      doc.addImage('/pdf/terms-bank-clients.jpeg', 'JPEG', 0, 0, pageWidth, pageHeight);
 
       // ================= PAGE 4 =================
       doc.addPage();
-      doc.addImage('/pdf/company-profile.jpg', 'JPEG', 0, 0, pageWidth, pageHeight);
+      doc.addImage('/pdf/company-profile.jpeg', 'JPEG', 0, 0, pageWidth, pageHeight);
 
       doc.save(`Quotation-${quotation.quotationNumber}.pdf`);
       toast.success('PDF downloaded successfully');

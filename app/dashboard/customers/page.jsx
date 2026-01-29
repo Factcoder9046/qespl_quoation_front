@@ -162,7 +162,13 @@ export default function CustomersPage() {
                       <td className="px-6 py-4">{customer.email}</td>
                       <td className="px-6 py-4">{customer.mobile}</td>
                       <td className="px-6 py-4 text-right">
-                        <button onClick={() => router.push(`/dashboard/customers/edit/${customer._id}`)} className="p-2">
+                        <button
+                          onClick={() =>
+                            router.push(`/dashboard/customers/edit/?id=${customer._id}`)
+                          }
+                          className="p-2"
+                        >
+
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button onClick={() => handleDelete(customer._id)} className="p-2 text-red-600">
@@ -186,7 +192,9 @@ export default function CustomersPage() {
                     </div>
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => router.push(`/dashboard/customers/edit/${customer._id}`)}
+                        onClick={() =>
+                          router.push(`/dashboard/customers/edit/?id=${customer._id}`)
+                        }
                         className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                       >
                         <Pencil className="w-4 h-4" />
@@ -199,7 +207,7 @@ export default function CustomersPage() {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Mail className="w-4 h-4 flex-shrink-0" />
@@ -217,7 +225,7 @@ export default function CustomersPage() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex flex-col sm:flex-row justify-end items-center gap-4 px-4 sm:px-6 py-4 border-t border-gray-200">
-                
+
                 <div className="flex items-center gap-2">
                   <button
                     onClick={goToPrevPage}
@@ -233,11 +241,10 @@ export default function CustomersPage() {
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                          currentPage === pageNum
-                            ? 'bg-gray-900 text-white'
-                            : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'
-                        }`}
+                        className={`px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-colors ${currentPage === pageNum
+                          ? 'bg-gray-900 text-white'
+                          : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50'
+                          }`}
                       >
                         {pageNum}
                       </button>

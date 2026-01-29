@@ -180,7 +180,7 @@ export default function ProductsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">
                           <button
-                            onClick={() => router.push(`/dashboard/products/edit/${product._id}`)}
+                            onClick={() => router.push(`/dashboard/products/edit/?id=${product._id}`)}
                             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Edit"
                           >
@@ -212,7 +212,7 @@ export default function ProductsPage() {
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
-                        onClick={() => router.push(`/dashboard/products/edit/${product._id}`)}
+                        onClick={() => router.push(`/dashboard/products/edit/?id=${product._id}`)}
                         className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Edit"
                       >

@@ -293,7 +293,7 @@ export default function UsersPage() {
               </button>
 
               <Link
-                href={`/dashboard/users/${user._id}`}
+                href={`/dashboard/users/edit?id=${user._id}`}
                 className="p-2 rounded-xl text-gray-600 hover:bg-gray-100 transition-colors"
                 title="Edit"
               >

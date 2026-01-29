@@ -64,23 +64,32 @@ export const userAPI = {
   update: (id, data) => api.put(`/users/${id}`, data),
   delete: (id) => api.delete(`/users/${id}`),
 
-  
+
   updatePermissions: (id, permissions) =>
     api.put(`/users/${id}/permissions`, { permissions })
 };
 
 /* ================= QUOTATION APIs ================= */
 export const quotationAPI = {
-  getAll: () => api.get('/quotations'),
+  
+  getAll: (params) =>
+    api.get('/quotations', { params }),
+
   getDeleted: () => api.get('/quotations/deleted'),
   getOne: (id) => api.get(`/quotations/${id}`),
   create: (data) => api.post('/quotations', data),
-  update: (id, data) => api.put(`/quotations/${id}`),
+  update: (id, data) => api.put(`/quotations/${id}`, data),
+
+  updateStatus: (id, status) =>
+    api.put(`/quotations/${id}`, { status }),
+
   delete: (id) => api.delete(`/quotations/${id}`),
   restore: (id) => api.put(`/quotations/${id}/restore`),
   permanentDelete: (id) =>
     api.delete(`/quotations/${id}/permanent`)
 };
+
+
 
 /* ================= COMPANY APIs ================= */
 export const companyAPI = {

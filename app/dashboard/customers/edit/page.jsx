@@ -1,14 +1,16 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { customerAPI } from '@/lib/api';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Save, UserCircle } from 'lucide-react';
 
 export default function EditCustomerPage() {
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
+  const id = searchParams.get('id');
+
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [formData, setFormData] = useState({
@@ -22,20 +24,21 @@ export default function EditCustomerPage() {
   });
 
   useEffect(() => {
-    fetchCustomer();
-  }, [params.id]);
+  if (id) fetchCustomer();
+}, [id]);
 
-  const fetchCustomer = async () => {
-    try {
-      const { data } = await customerAPI.getOne(params.id);
-      setFormData(data.customer);
-    } catch (error) {
-      toast.error('Failed to load customer');
-      router.push('/dashboard/customers');
-    } finally {
-      setFetching(false);
-    }
-  };
+const fetchCustomer = async () => {
+  try {
+    const { data } = await customerAPI.getOne(id);
+    setFormData(data.customer);
+  } catch (error) {
+    toast.error('Failed to load customer');
+    router.push('/dashboard/customers');
+  } finally {
+    setFetching(false);
+  }
+};
+
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -46,7 +49,7 @@ export default function EditCustomerPage() {
     setLoading(true);
 
     try {
-      await customerAPI.update(params.id, formData);
+      await customerAPI.update(id, formData);
       toast.success('Customer updated successfully! 🎉');
       router.push('/dashboard/customers');
     } catch (error) {
@@ -213,7 +216,7 @@ export default function EditCustomerPage() {
               </>
             )}
           </button>
-          
+
           <Link
             href="/dashboard/customers"
             className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"

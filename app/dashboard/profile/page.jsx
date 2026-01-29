@@ -33,8 +33,6 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-
-
   // Avatar upload handler
   const handleAvatarUpload = async (file) => {
     if (!file) return;

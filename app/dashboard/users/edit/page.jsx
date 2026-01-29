@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { userAPI } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Save, User, Mail, Shield } from 'lucide-react';
 import Link from 'next/link';
 
 export default function EditUserPage() {
-    const { id } = useParams();
+    const searchParams = useSearchParams();
+    const id = searchParams.get('id');
+
     const router = useRouter();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -20,23 +22,27 @@ export default function EditUserPage() {
     });
 
     useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const { data } = await userAPI.getOne(id);
-                setUser(data.user);
-                setFormData({
-                    name: data.user.name,
-                    email: data.user.email,
-                    role: data.user.role
-                });
-            } catch (err) {
-                toast.error('Failed to fetch user');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchUser();
-    }, [id]);
+    if (!id) return; 
+
+    const fetchUser = async () => {
+        try {
+            const { data } = await userAPI.getOne(id);
+            setUser(data.user);
+            setFormData({
+                name: data.user.name,
+                email: data.user.email,
+                role: data.user.role
+            });
+        } catch {
+            toast.error('Failed to fetch user');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    fetchUser();
+}, [id]);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -136,8 +142,8 @@ export default function EditUserPage() {
                         </select>
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
-                        {formData.role === 'admin' 
-                            ? '⚠️ Admin users have full access to all features' 
+                        {formData.role === 'admin'
+                            ? '⚠️ Admin users have full access to all features'
                             : 'Regular users can manage their own quotations'
                         }
                     </p>
@@ -177,7 +183,7 @@ export default function EditUserPage() {
                             </>
                         )}
                     </button>
-                    
+
                     <Link
                         href="/dashboard/users"
                         className="px-6 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
